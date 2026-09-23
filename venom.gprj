@@ -1,0 +1,26 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
+    <FileList>
+        <File path="src/adder2bit.v" type="file.verilog" enable="1"/>
+        <File path="src/adder4bit.v" type="file.verilog" enable="1"/>
+        <File path="src/adder8bit.v" type="file.verilog" enable="1"/>
+        <File path="src/alu.v" type="file.verilog" enable="1"/>
+        <File path="src/controlunit.v" type="file.verilog" enable="1"/>
+        <File path="src/datamemory.v" type="file.verilog" enable="1"/>
+        <File path="src/datapath.v" type="file.verilog" enable="1"/>
+        <File path="src/div8bit.v" type="file.verilog" enable="1"/>
+        <File path="src/fulladder.v" type="file.verilog" enable="1"/>
+        <File path="src/halfadder.v" type="file.verilog" enable="1"/>
+        <File path="src/instructionmemory.v" type="file.verilog" enable="1"/>
+        <File path="src/instructions.v" type="file.verilog" enable="1"/>
+        <File path="src/mul8bit.v" type="file.verilog" enable="1"/>
+        <File path="src/pc.v" type="file.verilog" enable="1"/>
+        <File path="src/registerfile.v" type="file.verilog" enable="1"/>
+        <File path="src/sub8bit.v" type="file.verilog" enable="1"/>
+        <File path="src/tb.v" type="file.verilog" enable="1"/>
+    </FileList>
+</Project>
