@@ -1,15 +1,8 @@
-# Gowin IDE build/output dosyaları (yeniden üretilebilir, repoya gerek yok)
 impl/
 *.log
-
-# Kullanıcıya özel IDE ayarları (herkeste farklı olur)
 *.gprj.user
-
-# Simülasyon derleme çıktısı (kaynak .v dosyasından tekrar üretilebilir)
 *.vvp
 *.vcd
-
-# İşletim sistemi / editör çöp dosyaları
 .DS_Store
 Thumbs.db
 *.swp
