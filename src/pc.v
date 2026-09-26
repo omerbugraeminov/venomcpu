@@ -1,5 +1,5 @@
 module pcounter(
-    input [3:0] address,
+    input [7:0] address,
     input jump,
     input clk,
     input reset,

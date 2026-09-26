@@ -2,14 +2,14 @@ module datapath(
     input clk,
     input reset,
     input start
-
-
 );
-wire [3:0] pcaddress;
-wire [7:0] pc;
+    wire [7:0] data;
+    wire [7:0] pc;
 
+    wire jump;
+    wire [7:0] muxresult;
     pcounter pcmodule(
-        .address(pcaddress),
+        .address(data),
         .pc(pc),
         .jump(jump),
         .reset(reset),
@@ -24,7 +24,6 @@ wire [7:0] pc;
     wire [2:0] opregA;
     wire [2:0] opregB;
     wire [2:0] outreg;
-    wire [7:0] data;
     instructions inst(
         .inst(outinsmem),
         .opcode(opcode),
@@ -33,18 +32,19 @@ wire [7:0] pc;
         .outreg(outreg),
         .data(data)
     );
-    wire jump;
     wire wenable;
     wire load;
     wire store;
-    wire select;
+    wire [1:0] select;
+    wire ldi;
     controlunit cu(
         .opcode(opcode),
         .jump(jump),
         .wenable(wenable),
         .load(load),
         .store(store),
-        .select(select)
+        .select(select),
+        .ldi(ldi)
     );
     wire [7:0] reddataA;
     wire [7:0] reddataB;
@@ -52,7 +52,7 @@ wire [7:0] pc;
         .clock(clk),
         .wrtenable(wenable),
         .wrtslct(outreg),
-        .wrtdata(aluresult),
+        .wrtdata(muxresult),
         .reddataA(reddataA),
         .reddataB(reddataB),
         .redslctA(opregA),
@@ -76,3 +76,11 @@ wire [7:0] pc;
         .wrtdata(reddataA),
         .reddata(ramdata)
     );
+    mux mux(
+    .a(aluresult),
+    .b(ramdata),
+    .c(data),
+    .select(select),
+    .muxrslt(muxresult)
+    );
+endmodule

@@ -55,7 +55,7 @@ module alu(
     4'b0011: result = addresult;
     4'b0100: result = diff;
     4'b0101: result = multresult[7:0];
-    4'b0110: result = divresult;
+    4'b0110: result = quotient;
     4'b0111: result = a^b;
     4'b1000: result = a&b;
     4'b1001: result = a|b;
