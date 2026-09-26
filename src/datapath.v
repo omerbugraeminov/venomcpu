@@ -35,10 +35,16 @@ wire [7:0] pc;
     );
     wire jump;
     wire wenable;
+    wire load;
+    wire store;
+    wire select;
     controlunit cu(
         .opcode(opcode),
         .jump(jump),
-        .wenable(wenable)
+        .wenable(wenable),
+        .load(load),
+        .store(store),
+        .select(select)
     );
     wire [7:0] reddataA;
     wire [7:0] reddataB;
@@ -61,4 +67,12 @@ wire [7:0] pc;
         .b(reddataB),
         .op(opcode),
         .result(aluresult)
+    );
+    wire [7:0] ramdata;
+    datamemory datamemory(
+        .clk(clk),
+        .address(data),
+        .wrtenable(store),
+        .wrtdata(reddataA),
+        .reddata(ramdata)
     );

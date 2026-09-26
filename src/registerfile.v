@@ -30,6 +30,7 @@ module regfile(
         else 
         R[7] <= wrtdata;
     end
+    end
     always @(*)
     begin 
         if (redslctA == 3'b000)
