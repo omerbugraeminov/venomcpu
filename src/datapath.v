@@ -1,6 +1,7 @@
 module datapath(
     input clk,
-    input reset
+    input reset,
+    input start
 
 
 );
@@ -39,4 +40,25 @@ wire [7:0] pc;
         .jump(jump),
         .wenable(wenable)
     );
-
+    wire [7:0] reddataA;
+    wire [7:0] reddataB;
+    regfile regfile(
+        .clock(clk),
+        .wrtenable(wenable),
+        .wrtslct(outreg),
+        .wrtdata(aluresult),
+        .reddataA(reddataA),
+        .reddataB(reddataB),
+        .redslctA(opregA),
+        .redslctB(opregB)
+    );
+    wire [7:0] aluresult;
+    alu alu(
+        .clk(clk),
+        .reset(reset),
+        .start(start),
+        .a(reddataA),
+        .b(reddataB),
+        .op(opcode),
+        .result(aluresult)
+    );
