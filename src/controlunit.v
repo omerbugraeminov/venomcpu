@@ -1,7 +1,7 @@
 module controlunit(
     input [3:0] opcode,
     output jump,
-    output wenable 
+    output reg wenable 
     );
     localparam nop = 4'b0000;
     assign jump = (opcode == 4'b0001);
