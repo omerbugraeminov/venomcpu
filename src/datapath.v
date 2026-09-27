@@ -5,7 +5,8 @@ module datapath(
 );
     wire [7:0] data;
     wire [7:0] pc;
-
+    wire polystart = ispoly&&!runi;
+    wire stall = runi ? !aludone : ispoly;
     wire jump;
     wire [7:0] muxresult;
     pcounter pcmodule(
@@ -13,7 +14,8 @@ module datapath(
         .pc(pc),
         .jump(jump),
         .reset(reset),
-        .clk(clk)
+        .clk(clk),
+        .stall(stall)
     );
     wire [20:0] outinsmem;
     instmem insmemmodule(
@@ -50,7 +52,7 @@ module datapath(
     wire [7:0] reddataB;
     regfile regfile(
         .clock(clk),
-        .wrtenable(wenable),
+        .wrtenable(wenable && !stall),
         .wrtslct(outreg),
         .wrtdata(muxresult),
         .reddataA(reddataA),
@@ -59,14 +61,18 @@ module datapath(
         .redslctB(opregB)
     );
     wire [7:0] aluresult;
+    wire aludone;
+    wire ispoly;
     alu alu(
         .clk(clk),
         .reset(reset),
-        .start(start),
+        .start(polystart),
         .a(reddataA),
         .b(reddataB),
         .op(opcode),
-        .result(aluresult)
+        .result(aluresult),
+        .done(aludone),
+        .ispoly(ispoly)
     );
     wire [7:0] ramdata;
     datamemory datamemory(
@@ -83,4 +89,20 @@ module datapath(
     .select(select),
     .muxrslt(muxresult)
     );
+    reg runi;
+    always @(posedge clk) begin
+        if (reset)
+            runi <= 1'b0;
+        else if (!runi) begin
+                if(ispoly)
+                    runi <= 1'b1;
+        end
+        else begin
+            if(aludone)
+                runi <= 1'b0;
+            end
+    end
+    
+        
+
 endmodule

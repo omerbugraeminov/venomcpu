@@ -5,6 +5,8 @@ module alu(
     input clk,
     input reset,
     input start,
+    output reg done,
+    output reg ispoly,
     output reg [7:0] result
     );
     wire addcout;
@@ -52,16 +54,51 @@ module alu(
     always @(*) begin
     
     case(op)
-    4'b0011: result = addresult;
-    4'b0100: result = diff;
-    4'b0101: result = multresult[7:0];
-    4'b0110: result = quotient;
-    4'b0111: result = a^b;
-    4'b1000: result = a&b;
-    4'b1001: result = a|b;
-    default: result = 8'b0;
-endcase
-end
+    4'b0011: begin 
+    result = addresult;
+    done = 1'b1;
+    end
+    4'b0100: begin
+    result = diff;
+    done = 1'b1;
+    end
+    4'b0101: begin
+    result = multresult[7:0];
+    done = muldone;
+    end
+    4'b0110: begin
+    result = quotient;
+    done = divdone;
+    end
+    4'b0111: begin 
+    result = a^b;
+    done = 1'b1;
+    end
+    4'b1000: begin 
+    result = a&b;
+    done = 1'b1;
+    end
+    4'b1001: begin 
+    result = a|b;
+    done = 1'b1;
+    end
+    default: begin
+    result = 8'b0;
+    done = 1'b1;
+    end
+    endcase
+
+    end
+
+        always @(*) begin
+        if (op == 4'b0101|| op == 4'b0110)
+        ispoly = 1'b1;
+        else
+        ispoly = 1'b0;
+       end
+
+        
+
 endmodule
     
     

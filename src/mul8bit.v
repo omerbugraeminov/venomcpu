@@ -26,8 +26,8 @@ module mul8bit(
         else if (count < 8) begin 
             if (rb[0] == 1'b1)
                 result  <= result + (ra << count);
-                count <= count + 1;
-                rb <= rb >> 1;
+            count <= count + 1;
+            rb <= rb >> 1;
         end
         else begin
         done <= 1;
