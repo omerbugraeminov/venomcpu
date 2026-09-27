@@ -7,6 +7,7 @@ module alu(
     input start,
     output reg done,
     output reg ispoly,
+    output reg zero,
     output reg [7:0] result
     );
     wire addcout;
@@ -82,6 +83,10 @@ module alu(
     result = a|b;
     done = 1'b1;
     end
+    4'b1101: begin
+    result = diff;
+    done = 1'b1;
+    end
     default: begin
     result = 8'b0;
     done = 1'b1;
@@ -96,6 +101,15 @@ module alu(
         else
         ispoly = 1'b0;
        end
+    always @(*) begin
+        if (result == 8'b0)
+            zero = 1'b1;
+        else 
+            zero = 1'b0;
+        end
+
+        
+        
 
         
 

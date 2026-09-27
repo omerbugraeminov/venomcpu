@@ -4,6 +4,7 @@ module controlunit(
     output reg wenable,
     output store,
     output load,
+    output beq,
     output [1:0] select,
     output ldi
     );
@@ -12,6 +13,7 @@ module controlunit(
     assign load = (opcode == 4'b1010);
     assign store = (opcode == 4'b1011);
     assign ldi = (opcode == 4'b1100);
+    assign beq = (opcode == 4'b1101);
     always @(*) begin
         case(opcode)
         4'b0011, 4'b0100, 4'b0101, 4'b0110,
