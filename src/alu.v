@@ -87,7 +87,7 @@ module alu(
     result = diff;
     done = 1'b1;
     end
-    4'b1101: begin
+    4'b1110: begin
     result = a;
     done = 1'b1;
     end
