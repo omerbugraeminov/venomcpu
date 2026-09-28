@@ -6,7 +6,8 @@ module regfile(
     output reg [7:0] reddataA,
     output reg [7:0] reddataB,
     input [2:0] redslctA,
-    input [2:0] redslctB
+    input [2:0] redslctB,
+    output [7:0] r1out
     );
     reg [7:0] R [0:7];
     always @(posedge clock)
@@ -67,6 +68,7 @@ module regfile(
         else 
         reddataB = R[7];
     end
+    assign r1out = R[1];
 endmodule
  
     

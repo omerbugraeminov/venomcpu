@@ -1,6 +1,6 @@
 # Venom CPU
 
-Venom is a simple 8-bit processor written from scratch in Verilog. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA and targets the Sipeed Tang Nano 20K board.
+Venom is a simple 8-bit processor written from scratch in Verilog. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
 
 ## Overview
 
@@ -10,6 +10,94 @@ Venom is a simple 8-bit processor written from scratch in Verilog. It is a learn
 - Separate instruction memory and data memory (256 entries each)
 - Single-cycle execution, except for multiply and divide, which stall the processor until they finish
 - Conditional (BEQ, BNE) and unconditional (JUMP) branches
+- The value of R1 is exposed as an output, and the board wrapper shows it on the LEDs
+
+## Getting started
+
+### Requirements
+
+- [Gowin EDA](https://www.gowinsemi.com/en/support/download_eda/) (the Education edition is enough) to build for Tang Nano 20K
+- Optional: [Icarus Verilog](https://steveicarus.github.io/iverilog/) and [GTKWave](https://gtkwave.sourceforge.net/) for simulation
+
+```
+git clone <repository-url>
+cd venom
+```
+
+### Running on Tang Nano 20K
+
+1. Open `venom.gprj` in Gowin EDA. The project is already set up for the Tang Nano 20K chip (`GW2AR-LV18QN88C8/I7`), and `src/venom.cst` contains the pin assignments.
+2. Set the top module. This setting is stored in Gowin's local files, so it is not included in the repository:
+   **Project → Configuration → Synthesize → Top Module/Entity** → `top`
+   (the module name, not the file name `top.v`).
+3. Write a program into `src/instructionmemory.v` (see [Writing programs](#writing-programs)). By default every address holds a NOP.
+4. Click **Run All** to synthesize and place & route.
+5. Load the bitstream (`impl/pnr/venom.fs`) onto the board with Gowin Programmer, or with [openFPGALoader](https://github.com/trabucayre/openFPGALoader):
+   ```
+   openFPGALoader -b tangnano20k impl/pnr/venom.fs
+   ```
+
+**What you will see:** the six onboard LEDs show the lower 6 bits of R1 in binary. LED0 is the least significant bit. The onboard LEDs are active-low, so `top.v` inverts the value, and a lit LED means `1`.
+
+**Reset:** the button on pin 88 is used as reset. Press it to restart the program from address 0.
+
+> If the LEDs show the result of only the first instruction (for example `5` instead of `8` with the example program below), the button works the other way around on your board and the CPU is stuck in reset. Change `.reset(btn)` to `.reset(~btn)` in `src/top.v`.
+
+### Using a different board
+
+Only two files are specific to the Tang Nano 20K: `src/top.v` and `src/venom.cst`. Everything else is board-independent.
+
+1. **Create a new Gowin project** (or a project in your FPGA vendor's tool) for your chip and add every `.v` file in `src/` except `top.v`.
+2. **Write your own top module.** The CPU core is `datapath`:
+   ```verilog
+   datapath cpu(
+       .clk(clk),      // board clock
+       .reset(rst),    // active-high: 1 = reset
+       .start(1'b0),   // unused, tie to 0
+       .r1(r1)         // 8-bit value of R1
+   );
+   ```
+   Then connect `r1` to whatever your board has: LEDs, a 7-segment display, and so on. Check the following for your board:
+   - **LED polarity:** if the LEDs are active-low (0 = on), invert the value with `~` like `top.v` does. If they are active-high, don't.
+   - **Reset polarity:** `datapath` expects an active-high reset. If your button reads 0 when pressed, invert it.
+   - **Number of LEDs:** `top.v` uses `r1[5:0]` for 6 LEDs. Adjust the width for your board.
+3. **Write a constraints file** for your board that maps your top module's ports (clock, reset button, LEDs) to the physical pins. Your board's documentation or example projects list the pin numbers.
+
+No clock divider is needed as long as the program ends with HALT: the CPU finishes in a few microseconds and the result stays on the LEDs.
+
+## Writing programs
+
+Programs are written directly into `src/instructionmemory.v`. The file has one line for each of the 256 addresses, and every line starts as a NOP:
+
+```verilog
+8'b00000000: outinst = 21'b0000_000_000_000_00000000;
+```
+
+To write an instruction, replace the 21-bit value on the line of the address you want. Always end the program with HALT.
+
+### Example
+
+Adds 5 and 3 and leaves the result in R1:
+
+```verilog
+8'b00000000: outinst = 21'b1011_000_000_001_00000101; // LDI  R1, 5
+8'b00000001: outinst = 21'b1011_000_000_010_00000011; // LDI  R2, 3
+8'b00000010: outinst = 21'b0010_001_010_001_00000000; // ADD  R1, R1, R2
+8'b00000011: outinst = 21'b1101_000_000_000_00000000; // HALT
+```
+
+R1 = 8 (`001000`), so on the Tang Nano 20K only LED3 is lit.
+
+A loop that counts R1 from 0 to 5:
+
+```verilog
+8'b00000000: outinst = 21'b1011_000_000_001_00000000; // LDI  R1, 0
+8'b00000001: outinst = 21'b1011_000_000_010_00000101; // LDI  R2, 5
+8'b00000010: outinst = 21'b1011_000_000_011_00000001; // LDI  R3, 1
+8'b00000011: outinst = 21'b0010_001_011_001_00000000; // ADD  R1, R1, R3   (loop start)
+8'b00000100: outinst = 21'b1111_001_010_000_00000011; // BNE  R1, R2, 3
+8'b00000101: outinst = 21'b1101_000_000_000_00000000; // HALT
+```
 
 ## Instruction format
 
@@ -105,7 +193,9 @@ jump || (beq && zero) || (bne && !zero)
 
 | File | Module | Description |
 |------|--------|-------------|
-| `src/datapath.v` | `datapath` | Top-level CPU module, connects all components |
+| `src/top.v` | `top` | Tang Nano 20K wrapper: clock, reset button, LEDs |
+| `src/venom.cst` | | Tang Nano 20K pin assignments |
+| `src/datapath.v` | `datapath` | CPU core, connects all components |
 | `src/pc.v` | `pcounter` | Program counter (reset, stall, branch) |
 | `src/instructionmemory.v` | `instmem` | Instruction memory, the program lives here |
 | `src/instructions.v` | `instructions` | Splits the instruction word into fields |
@@ -119,25 +209,9 @@ jump || (beq && zero) || (bne && !zero)
 | `src/datamemory.v` | `datamemory` | 256-byte data memory |
 | `src/mux.v` | `mux` | 3-input write-back mux |
 
-## Example program
-
-A loop that counts R1 from 0 to 5. Programs are written directly into `instructionmemory.v`:
-
-```verilog
-8'b00000000: outinst = 21'b1011_000_000_001_00000000; // LDI  R1, 0
-8'b00000001: outinst = 21'b1011_000_000_010_00000101; // LDI  R2, 5
-8'b00000010: outinst = 21'b1011_000_000_011_00000001; // LDI  R3, 1
-8'b00000011: outinst = 21'b0010_001_011_001_00000000; // ADD  R1, R1, R3   (loop start)
-8'b00000100: outinst = 21'b1111_001_010_000_00000011; // BNE  R1, R2, 3
-8'b00000101: outinst = 21'b1011_000_000_100_01100011; // LDI  R4, 99
-8'b00000110: outinst = 21'b1101_000_000_000_00000000; // HALT
-```
-
-When it finishes, R1 = 5, R4 = 99, and the CPU is halted at address 6.
-
 ## Simulation
 
-With Icarus Verilog and a testbench that instantiates `datapath`:
+With Icarus Verilog and a testbench that instantiates `datapath` (or `top`):
 
 ```
 iverilog -g2005 -o sim src/*.v testbench.v

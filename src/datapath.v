@@ -1,7 +1,8 @@
 module datapath(
     input clk,
     input reset,
-    input start
+    input start,
+    output [7:0] r1
 );
     wire [7:0] data;
     wire [7:0] pc;
@@ -65,7 +66,8 @@ module datapath(
         .reddataA(reddataA),
         .reddataB(reddataB),
         .redslctA(opregA),
-        .redslctB(opregB)
+        .redslctB(opregB),
+        .r1out(r1)
     );
     wire [7:0] aluresult;
     wire aludone;

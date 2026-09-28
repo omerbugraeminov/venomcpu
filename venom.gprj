@@ -22,6 +22,7 @@
         <File path="src/pc.v" type="file.verilog" enable="1"/>
         <File path="src/registerfile.v" type="file.verilog" enable="1"/>
         <File path="src/sub8bit.v" type="file.verilog" enable="1"/>
-        <File path="src/tb.v" type="file.verilog" enable="1"/>
+        <File path="src/top.v" type="file.verilog" enable="1"/>
+        <File path="src/venom.cst" type="file.cst" enable="1"/>
     </FileList>
 </Project>
