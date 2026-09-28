@@ -10,12 +10,13 @@ module datapath(
     wire stall = (runi ? !aludone : ispoly) || halt;
     wire jump;
     wire beq;
+    wire bne;
     wire zero;
     wire [7:0] muxresult;
     pcounter pcmodule(
         .address(data),
         .pc(pc),
-        .jump(jump || (beq && zero)),
+        .jump(jump || (beq && zero) || (bne && !zero)),
         .reset(reset),
         .clk(clk),
         .stall(stall)
@@ -51,7 +52,8 @@ module datapath(
         .select(select),
         .ldi(ldi),
         .beq(beq),
-        .halt(halt)
+        .halt(halt),
+        .bne(bne)
     );
     wire [7:0] reddataA;
     wire [7:0] reddataB;

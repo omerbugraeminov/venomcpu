@@ -7,7 +7,8 @@ module controlunit(
     output beq,
     output halt,
     output [1:0] select,
-    output ldi
+    output ldi,
+    output bne
     );
     localparam nop = 4'b0000;
     assign jump = (opcode == 4'b0001);
@@ -16,6 +17,7 @@ module controlunit(
     assign ldi = (opcode == 4'b1011);
     assign beq = (opcode == 4'b1100);
     assign halt = (opcode == 4'b1101);
+    assign bne = (opcode == 4'b1111);
     always @(*) begin
         case(opcode)
         4'b0010, 4'b0011, 4'b0100, 4'b0101, 4'b0110,

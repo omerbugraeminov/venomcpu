@@ -91,6 +91,10 @@ module alu(
     result = a;
     done = 1'b1;
     end
+    4'b1111: begin
+    result = diff;
+    done = 1'b1;
+    end
     default: begin
     result = 8'b0;
     done = 1'b1;
