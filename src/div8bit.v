@@ -24,6 +24,10 @@ module div8bit(
         done <= 0;
         remainder <= 0;
         end
+    else if (rb == 0) begin
+        done <= 1;
+        quotient <= 0;
+        end
     else if (ra>=rb) begin
         ra <= ra - rb;
         quotient <= quotient +1;
