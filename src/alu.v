@@ -55,35 +55,35 @@ module alu(
     always @(*) begin
     
     case(op)
-    4'b0011: begin 
+    4'b0010: begin 
     result = addresult;
     done = 1'b1;
     end
-    4'b0100: begin
+    4'b0011: begin
     result = diff;
     done = 1'b1;
     end
-    4'b0101: begin
+    4'b0100: begin
     result = multresult[7:0];
     done = muldone;
     end
-    4'b0110: begin
+    4'b0101: begin
     result = quotient;
     done = divdone;
     end
-    4'b0111: begin 
+    4'b0110: begin 
     result = a^b;
     done = 1'b1;
     end
-    4'b1000: begin 
+    4'b0111: begin 
     result = a&b;
     done = 1'b1;
     end
-    4'b1001: begin 
+    4'b1000: begin 
     result = a|b;
     done = 1'b1;
     end
-    4'b1101: begin
+    4'b1100: begin
     result = diff;
     done = 1'b1;
     end
@@ -96,7 +96,7 @@ module alu(
     end
 
         always @(*) begin
-        if (op == 4'b0101|| op == 4'b0110)
+        if (op == 4'b0100|| op == 4'b0101)
         ispoly = 1'b1;
         else
         ispoly = 1'b0;

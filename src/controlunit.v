@@ -5,19 +5,21 @@ module controlunit(
     output store,
     output load,
     output beq,
+    output halt,
     output [1:0] select,
     output ldi
     );
     localparam nop = 4'b0000;
     assign jump = (opcode == 4'b0001);
-    assign load = (opcode == 4'b1010);
-    assign store = (opcode == 4'b1011);
-    assign ldi = (opcode == 4'b1100);
-    assign beq = (opcode == 4'b1101);
+    assign load = (opcode == 4'b1001);
+    assign store = (opcode == 4'b1010);
+    assign ldi = (opcode == 4'b1011);
+    assign beq = (opcode == 4'b1100);
+    assign halt = (opcode == 4'b1101);
     always @(*) begin
         case(opcode)
-        4'b0011, 4'b0100, 4'b0101, 4'b0110,
-        4'b0111, 4'b1000, 4'b1001, 4'b1010, 4'b1100 :wenable = 1'b1;
+        4'b0010, 4'b0011, 4'b0100, 4'b0101,
+        4'b0110, 4'b0111, 4'b1000, 4'b1001, 4'b1011 :wenable = 1'b1;
         default: wenable = 1'b0;
     endcase
     end

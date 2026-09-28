@@ -6,7 +6,8 @@ module datapath(
     wire [7:0] data;
     wire [7:0] pc;
     wire polystart = ispoly&&!runi;
-    wire stall = runi ? !aludone : ispoly;
+    wire halt;
+    wire stall = (runi ? !aludone : ispoly) || halt;
     wire jump;
     wire beq;
     wire zero;
@@ -49,7 +50,8 @@ module datapath(
         .store(store),
         .select(select),
         .ldi(ldi),
-        .beq(beq)
+        .beq(beq),
+        .halt(halt)
     );
     wire [7:0] reddataA;
     wire [7:0] reddataB;
