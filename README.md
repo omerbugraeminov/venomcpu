@@ -138,32 +138,7 @@ Unused fields are set to `0`.
 
 ## Architecture
 
-```
-            +------------+     +-------------+
-  clk ----->|  pcounter  |---->|   instmem   |
-            |            | PC  |             |
-            +------------+     +------+------+
-               ^    ^                 | 21 bits
-      branch   |    | stall           v
-               |    |          +--------------+
-               |    |          | instructions |  splits the instruction into fields
-               |    |          +------+-------+
-               |    |                 | opcode, regA, regB, outreg, data
-               |    |                 v
-               |    |          +--------------+
-               +----+----------| controlunit  |  generates control signals
-                               +--------------+
-
-        +-----------+        +----------------+        +-------------+
-        |  regfile  |------->|      alu       |        | datamemory  |
-        |  R0–R7    |  A, B  |                |        |  256 bytes  |
-        +-----------+        +--------+-------+        +------+------+
-              ^                       |                       |
-              |                       v                       v
-              |   +-------------------------------------------------+
-              +---|  mux:  ALU result / RAM data / data field       |
-                  +-------------------------------------------------+
-```
+![Venom CPU architecture](docs/architecture.svg)
 
 The value written back to the register file comes from a 3-input mux:
 
