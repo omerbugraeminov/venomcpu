@@ -34,7 +34,7 @@ cd venom
 2. Set the top module. This setting is stored in Gowin's local files, so it is not included in the repository:
    **Project → Configuration → Synthesize → Top Module/Entity** → `top`
    (the module name, not the file name `top.v`).
-3. Write a program into `src/instructionmemory.v` (see [Writing programs](#writing-programs)). The repository ships with a counter program that counts up in R1.
+3. Write a program into `src/instructionmemory.v` (see [Writing programs](#writing-programs)). The repository ships with a Fibonacci demo that stores its results in RAM and plays them back on the LEDs.
 4. Click **Run All** to synthesize and place & route.
 5. Load the bitstream (`impl/pnr/venom.fs`) onto the board with Gowin Programmer, or with [openFPGALoader](https://github.com/trabucayre/openFPGALoader):
    ```
@@ -43,7 +43,7 @@ cd venom
 
 **What you will see:** the six onboard LEDs show the lower 6 bits of R1 in binary. LED0 is the least significant bit. The onboard LEDs are active-low, so `top.v` inverts the value, and a lit LED means `1`.
 
-**Clock:** `top.v` divides the 27 MHz board clock down to 1 Hz, so the CPU runs one cycle per second. With the counter program, the LEDs count up in binary, one step every 2 seconds (ADD + JUMP, the JUMP costs one extra cycle for the pipeline flush). To run at a different speed, change the limit `24'd13499999` in `top.v`.
+**Clock:** `top.v` divides the 27 MHz board clock down to 1 Hz, so the CPU runs one cycle per second. With the Fibonacci demo you can follow every step on the LEDs (see [Examples](#examples)). To run at a different speed, change the limit `24'd13499999` in `top.v`.
 
 **Reset:** the button on pin 88 is used as reset. Because reset is synchronous and the CPU clock is 1 Hz, hold the button for at least one second.
 
@@ -83,7 +83,28 @@ To write an instruction, replace the 21-bit value on the line of the address you
 
 ### Examples
 
-The counter that ships with the repository (R1 counts up forever):
+**Fibonacci + RAM (ships with the repository).** The program computes the Fibonacci numbers 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, shows each one on the LEDs and stores it in RAM[16]–RAM[25]. Then it turns the LEDs off for one cycle and plays the numbers back by reading them from RAM with LOAD, over and over. The playback values come from memory, not from a new calculation, so it shows that STORE and LOAD work. It also exercises forwarding, since almost every instruction uses the result of the one before it.
+
+Venom addresses RAM with a constant (the `data` field), so the loop is unrolled. The first steps:
+
+```verilog
+8'b00000000: outinst = 21'b1011_000_000_010_00000000; // LDI   R2, 0          ; a = 0
+8'b00000001: outinst = 21'b1011_000_000_001_00000001; // LDI   R1, 1          ; b = 1
+8'b00000010: outinst = 21'b1010_001_000_000_00010000; // STORE [16], R1
+8'b00000011: outinst = 21'b0010_010_001_011_00000000; // ADD   R3, R2, R1     ; c = a + b
+8'b00000100: outinst = 21'b1110_001_000_010_00000000; // MOV   R2, R1         ; a = b
+8'b00000101: outinst = 21'b1110_011_000_001_00000000; // MOV   R1, R3         ; b = c (shown on LEDs)
+8'b00000110: outinst = 21'b1010_001_000_000_00010001; // STORE [17], R1
+...                                                   // repeated up to STORE [25]
+8'b00100111: outinst = 21'b1011_000_000_001_00000000; // LDI   R1, 0          ; LEDs off, playback starts
+8'b00101000: outinst = 21'b1001_000_000_001_00010000; // LOAD  R1, [16]
+...                                                   // LOAD [17] ... LOAD [25]
+8'b00110010: outinst = 21'b0001_000_000_000_00100111; // JUMP  39             ; play back again
+```
+
+See `src/instructionmemory.v` for the full program.
+
+A counter (R1 counts up forever, one step every 2 seconds at 1 Hz: ADD + JUMP, and the JUMP costs one extra cycle for the pipeline flush):
 
 ```verilog
 8'b00000000: outinst = 21'b1011_000_000_001_00000000; // LDI  R1, 0
