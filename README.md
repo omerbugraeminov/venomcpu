@@ -1,6 +1,8 @@
-# Venom CPU
+# Venom Extended
 
-Venom is a simple 8-bit processor written from scratch in Verilog. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
+Venom Extended is the pipelined version of Venom, a simple 8-bit processor written from scratch in Verilog. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
+
+> **Branches:** `main` holds the original single-cycle Venom. `extended` (this branch) holds Venom Extended, which adds a 3-stage pipeline.
 
 ## Overview
 
@@ -8,9 +10,11 @@ Venom is a simple 8-bit processor written from scratch in Verilog. It is a learn
 - 8 general-purpose 8-bit registers (R0–R7)
 - Fixed-length 21-bit instruction word, 16 instructions
 - Separate instruction memory and data memory (256 entries each)
-- Single-cycle execution, except for multiply and divide, which stall the processor until they finish
+- 3-stage pipeline (Fetch, Execute, Write-back) with forwarding and branch flush
+- Multiply and divide are multi-cycle and stall the pipeline until they finish
 - Conditional (BEQ, BNE) and unconditional (JUMP) branches
 - The value of R1 is exposed as an output, and the board wrapper shows it on the LEDs
+- The board wrapper divides the 27 MHz clock down to 1 Hz, so you can watch the program run step by step
 
 ## Getting started
 
@@ -30,7 +34,7 @@ cd venom
 2. Set the top module. This setting is stored in Gowin's local files, so it is not included in the repository:
    **Project → Configuration → Synthesize → Top Module/Entity** → `top`
    (the module name, not the file name `top.v`).
-3. Write a program into `src/instructionmemory.v` (see [Writing programs](#writing-programs)). By default every address holds a NOP.
+3. Write a program into `src/instructionmemory.v` (see [Writing programs](#writing-programs)). The repository ships with a counter program that counts up in R1.
 4. Click **Run All** to synthesize and place & route.
 5. Load the bitstream (`impl/pnr/venom.fs`) onto the board with Gowin Programmer, or with [openFPGALoader](https://github.com/trabucayre/openFPGALoader):
    ```
@@ -39,7 +43,9 @@ cd venom
 
 **What you will see:** the six onboard LEDs show the lower 6 bits of R1 in binary. LED0 is the least significant bit. The onboard LEDs are active-low, so `top.v` inverts the value, and a lit LED means `1`.
 
-**Reset:** the button on pin 88 is used as reset. Press it to restart the program from address 0.
+**Clock:** `top.v` divides the 27 MHz board clock down to 1 Hz, so the CPU runs one cycle per second. With the counter program, the LEDs count up in binary, one step every 2 seconds (ADD + JUMP, the JUMP costs one extra cycle for the pipeline flush). To run at a different speed, change the limit `24'd13499999` in `top.v`.
+
+**Reset:** the button on pin 88 is used as reset. Because reset is synchronous and the CPU clock is 1 Hz, hold the button for at least one second.
 
 > If the LEDs show the result of only the first instruction (for example `5` instead of `8` with the example program below), the button works the other way around on your board and the CPU is stuck in reset. Change `.reset(btn)` to `.reset(~btn)` in `src/top.v`.
 
@@ -63,7 +69,7 @@ Only two files are specific to the Tang Nano 20K: `src/top.v` and `src/venom.cst
    - **Number of LEDs:** `top.v` uses `r1[5:0]` for 6 LEDs. Adjust the width for your board.
 3. **Write a constraints file** for your board that maps your top module's ports (clock, reset button, LEDs) to the physical pins. Your board's documentation or example projects list the pin numbers.
 
-No clock divider is needed as long as the program ends with HALT: the CPU finishes in a few microseconds and the result stays on the LEDs.
+`datapath` runs at whatever clock you give it. Without a clock divider, a program that ends with HALT finishes in a few microseconds and the result stays on the LEDs. To watch it step by step, add a divider like the one in `top.v`.
 
 ## Writing programs
 
@@ -75,7 +81,17 @@ Programs are written directly into `src/instructionmemory.v`. The file has one l
 
 To write an instruction, replace the 21-bit value on the line of the address you want. Always end the program with HALT.
 
-### Example
+### Examples
+
+The counter that ships with the repository (R1 counts up forever):
+
+```verilog
+8'b00000000: outinst = 21'b1011_000_000_001_00000000; // LDI  R1, 0
+8'b00000001: outinst = 21'b1011_000_000_010_00000001; // LDI  R2, 1
+8'b00000010: outinst = 21'b0010_001_010_001_00000000; // ADD  R1, R1, R2
+8'b00000011: outinst = 21'b0001_000_000_000_00000010; // JUMP 2
+```
+
 
 Adds 5 and 3 and leaves the result in R1:
 
@@ -140,6 +156,34 @@ Unused fields are set to `0`.
 
 ![Venom CPU architecture](docs/architecture.svg)
 
+> The diagram shows the original single-cycle datapath. The pipeline registers described below sit on top of it.
+
+### Pipeline
+
+Venom Extended splits each instruction into three stages, and three instructions are in flight at the same time:
+
+```
+[Fetch] ──fetchreg──▶ [Execute] ──wbdata / wbreg / wbenable──▶ [Write-back]
+ read instmem          decode, read registers,                    write the
+                       ALU, RAM, write-back mux                   register file
+```
+
+- **Fetch → Execute:** `fetchreg` (21 bits) holds the fetched instruction.
+- **Execute → Write-back:** `wbdata` (value), `wbreg` (destination register) and `wbenable` (write or not) hold the result for one cycle before it is written.
+
+**Branch flush (control hazard).** A branch is resolved in Execute, and by then the next instruction has already been fetched. When a branch is taken (`jump || (beq && zero) || (bne && !zero)`), `fetchreg` is loaded with a NOP instead, so the wrong instruction is thrown away. Every taken branch costs one cycle.
+
+**Forwarding (data hazard).** An instruction may need a register that the previous instruction has not written yet. In that case the value is taken directly from `wbdata`:
+
+```verilog
+assign fwdA = (wbenable && (wbreg == opregA)) ? wbdata : reddataA;
+assign fwdB = (wbenable && (wbreg == opregB)) ? wbdata : reddataB;
+```
+
+`fwdA` feeds the ALU's A input and the data written by STORE, `fwdB` feeds the ALU's B input.
+
+**Stall and reset.** While a MUL, DIV or HALT stalls the CPU, `fetchreg` keeps its value so the instruction stays in Execute. On reset, `fetchreg` is cleared to NOP and `wbenable` to 0.
+
 The value written back to the register file comes from a 3-input mux:
 
 - `00`: ALU result (arithmetic/logic instructions, MOV)
@@ -151,7 +195,7 @@ The value written back to the register file comes from a 3-input mux:
 The multiplier (`mul8bit.v`, shift-and-add) and divider (`div8bit.v`, repeated subtraction) take several cycles. When a MUL or DIV instruction is decoded:
 
 1. A one-cycle `start` pulse is sent to the ALU and the `runi` flag is set.
-2. The `stall` signal holds the PC and blocks register writes.
+2. The `stall` signal holds the PC and `fetchreg`, and blocks register writes.
 3. When the ALU raises `done`, the result is written back, `runi` is cleared, and the PC advances.
 
 HALT reuses the same `stall` signal. Since the PC stops, the same HALT instruction is fetched on every cycle, so the CPU stays halted until reset.
@@ -168,9 +212,9 @@ jump || (beq && zero) || (bne && !zero)
 
 | File | Module | Description |
 |------|--------|-------------|
-| `src/top.v` | `top` | Tang Nano 20K wrapper: clock, reset button, LEDs |
+| `src/top.v` | `top` | Tang Nano 20K wrapper: 1 Hz clock divider, reset button, LEDs |
 | `src/venom.cst` | | Tang Nano 20K pin assignments |
-| `src/datapath.v` | `datapath` | CPU core, connects all components |
+| `src/datapath.v` | `datapath` | CPU core: connects all components, pipeline registers, forwarding and flush |
 | `src/pc.v` | `pcounter` | Program counter (reset, stall, branch) |
 | `src/instructionmemory.v` | `instmem` | Instruction memory, the program lives here |
 | `src/instructions.v` | `instructions` | Splits the instruction word into fields |

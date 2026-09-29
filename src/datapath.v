@@ -4,6 +4,10 @@ module datapath(
     input start,
     output [7:0] r1
 );
+    reg [20:0] fetchreg;
+    reg [7:0] wbdata;
+    reg [2:0] wbreg;
+    reg wbenable;
     wire [7:0] data;
     wire [7:0] pc;
     wire polystart = ispoly&&!runi;
@@ -32,7 +36,7 @@ module datapath(
     wire [2:0] opregB;
     wire [2:0] outreg;
     instructions inst(
-        .inst(outinsmem),
+        .inst(fetchreg),
         .opcode(opcode),
         .regA(opregA),
         .regB(opregB),
@@ -60,15 +64,19 @@ module datapath(
     wire [7:0] reddataB;
     regfile regfile(
         .clock(clk),
-        .wrtenable(wenable && !stall),
-        .wrtslct(outreg),
-        .wrtdata(muxresult),
+        .wrtenable(wbenable),
+        .wrtslct(wbreg),
+        .wrtdata(wbdata),
         .reddataA(reddataA),
         .reddataB(reddataB),
         .redslctA(opregA),
         .redslctB(opregB),
         .r1out(r1)
     );
+    wire [7:0] fwdA;
+    wire [7:0] fwdB;
+    assign fwdA = (wbenable && (wbreg == opregA)) ? wbdata: reddataA;
+    assign fwdB = (wbenable && (wbreg == opregB)) ? wbdata: reddataB;
     wire [7:0] aluresult;
     wire aludone;
     wire ispoly;
@@ -76,8 +84,8 @@ module datapath(
         .clk(clk),
         .reset(reset),
         .start(polystart),
-        .a(reddataA),
-        .b(reddataB),
+        .a(fwdA),
+        .b(fwdB),
         .op(opcode),
         .result(aluresult),
         .done(aludone),
@@ -89,7 +97,7 @@ module datapath(
         .clk(clk),
         .address(data),
         .wrtenable(store),
-        .wrtdata(reddataA),
+        .wrtdata(fwdA),
         .reddata(ramdata)
     );
     mux mux(
@@ -112,6 +120,28 @@ module datapath(
                 runi <= 1'b0;
             end
     end
+    localparam NOP = 21'b0;
+    always @(posedge clk) begin
+        if (reset)
+        fetchreg <= NOP;
+        else if (stall)
+        fetchreg <= fetchreg;
+        else if (jump || (beq && zero) || (bne && !zero))
+        fetchreg <= NOP;
+        else 
+        fetchreg <= outinsmem;
+
+    end
+    always @(posedge clk) begin
+        wbdata <= muxresult;
+        wbreg <= outreg;
+        if (reset)
+        wbenable <= 0;
+        else 
+        wbenable <= wenable && !stall;
+    end
+
+
     
         
 
