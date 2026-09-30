@@ -8,20 +8,36 @@ module datapath(
     reg [7:0] wbdata;
     reg [2:0] wbreg;
     reg wbenable;
+    reg [7:0] exA;
+    reg [7:0] exB;
+    reg [3:0] exop;
+    reg [7:0] exdata;
+    reg [2:0] exout;
+    reg exwen;
+    reg exload;
+    reg exstore;
+    reg exldi;
+    reg exjmp;
+    reg exbeq;
+    reg exbne;
+    reg exhalt;
+    reg [2:0] exopregA;
+    reg [2:0] exopregB;
     wire [7:0] data;
     wire [7:0] pc;
     wire polystart = ispoly&&!runi;
     wire halt;
-    wire stall = (runi ? !aludone : ispoly) || halt;
+    wire stall = (runi ? !aludone : ispoly) || exhalt;
     wire jump;
     wire beq;
     wire bne;
     wire zero;
     wire [7:0] muxresult;
+    wire branch = exjmp || (exbeq && zero) || (exbne && !zero);
     pcounter pcmodule(
-        .address(data),
+        .address(exdata),
         .pc(pc),
-        .jump(jump || (beq && zero) || (bne && !zero)),
+        .jump(branch),
         .reset(reset),
         .clk(clk),
         .stall(stall)
@@ -75,8 +91,12 @@ module datapath(
     );
     wire [7:0] fwdA;
     wire [7:0] fwdB;
-    assign fwdA = (wbenable && (wbreg == opregA)) ? wbdata: reddataA;
-    assign fwdB = (wbenable && (wbreg == opregB)) ? wbdata: reddataB;
+    wire [7:0] exfwdA;
+    wire [7:0] exfwdB;
+    assign fwdA = (wbenable && (wbreg == opregA)) ? wbdata : reddataA;
+    assign fwdB = (wbenable && (wbreg == opregB)) ? wbdata : reddataB;
+    assign exfwdA = (wbenable && (wbreg == exopregA)) ? wbdata: exA;
+    assign exfwdB = (wbenable && (wbreg == exopregB)) ? wbdata: exB;
     wire [7:0] aluresult;
     wire aludone;
     wire ispoly;
@@ -84,9 +104,9 @@ module datapath(
         .clk(clk),
         .reset(reset),
         .start(polystart),
-        .a(fwdA),
-        .b(fwdB),
-        .op(opcode),
+        .a(exfwdA),
+        .b(exfwdB),
+        .op(exop),
         .result(aluresult),
         .done(aludone),
         .ispoly(ispoly),
@@ -95,16 +115,16 @@ module datapath(
     wire [7:0] ramdata;
     datamemory datamemory(
         .clk(clk),
-        .address(data),
-        .wrtenable(store),
-        .wrtdata(fwdA),
+        .address(exdata),
+        .wrtenable(exstore),
+        .wrtdata(exfwdA),
         .reddata(ramdata)
     );
     mux mux(
     .a(aluresult),
     .b(ramdata),
-    .c(data),
-    .select(select),
+    .c(exdata),
+    .select({exldi , exload}),
     .muxrslt(muxresult)
     );
     reg runi;
@@ -126,7 +146,7 @@ module datapath(
         fetchreg <= NOP;
         else if (stall)
         fetchreg <= fetchreg;
-        else if (jump || (beq && zero) || (bne && !zero))
+        else if (branch)
         fetchreg <= NOP;
         else 
         fetchreg <= outinsmem;
@@ -134,14 +154,56 @@ module datapath(
     end
     always @(posedge clk) begin
         wbdata <= muxresult;
-        wbreg <= outreg;
+        wbreg <= exout;
         if (reset)
         wbenable <= 0;
         else 
-        wbenable <= wenable && !stall;
+        wbenable <= exwen && !stall;
     end
-
-
+    always @(posedge clk) begin
+        if (reset) begin
+            exA <= 0;
+            exB <= 0;
+            exop <= 0;
+            exdata <= 8'b0;
+            exout <= 0;
+            exwen <= 0;
+            exload <= 0;
+            exstore <= 0;
+            exldi <= 0;
+            exjmp <= 0;
+            exbeq <= 0;
+            exbne <= 0;
+            exhalt <= 0;
+            exopregA <= 0;
+            exopregB <= 0;
+        end
+        else if (branch) begin
+            exwen <= 0;
+            exstore <= 0;
+            exjmp <= 0;
+            exbeq <= 0;
+            exbne <= 0;
+            exhalt <= 0;
+        end     
+        else if (!stall) begin
+            exA <= fwdA;
+            exB <= fwdB;
+            exop <= opcode;
+            exdata <= data;
+            exout <= outreg;
+            exwen <= wenable;
+            exload <= load;
+            exstore <= store;
+            exldi <= ldi;
+            exjmp <= jump;
+            exbeq <= beq;
+            exbne <= bne;
+            exhalt <= halt;
+            exopregA <= opregA;
+            exopregB <= opregB;
+    end
+end
     
         
 
