@@ -24,5 +24,6 @@
         <File path="src/sub8bit.v" type="file.verilog" enable="1"/>
         <File path="src/top.v" type="file.verilog" enable="1"/>
         <File path="src/venom.cst" type="file.cst" enable="1"/>
+        <File path="src/venom.sdc" type="file.sdc" enable="1"/>
     </FileList>
 </Project>

@@ -2,7 +2,7 @@
 
 Venom Extended is the pipelined version of Venom, a simple 8-bit processor written from scratch in Verilog. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
 
-> **Branches:** `main` holds the original single-cycle Venom. `extended` (this branch) holds Venom Extended, which adds a 3-stage pipeline.
+> **Branches:** `main` holds the original single-cycle Venom. `extended` (this branch) holds Venom Extended, which adds a 4-stage pipeline.
 
 ## Overview
 
@@ -10,7 +10,7 @@ Venom Extended is the pipelined version of Venom, a simple 8-bit processor writt
 - 8 general-purpose 8-bit registers (R0–R7)
 - Fixed-length 21-bit instruction word, 16 instructions
 - Separate instruction memory and data memory (256 entries each)
-- 3-stage pipeline (Fetch, Execute, Write-back) with forwarding and branch flush
+- 4-stage pipeline (Fetch, Decode, Execute, Write-back) with two-level forwarding and branch flush
 - Multiply and divide are multi-cycle and stall the pipeline until they finish
 - Conditional (BEQ, BNE) and unconditional (JUMP) branches
 - The value of R1 is exposed as an output, and the board wrapper shows it on the LEDs
@@ -34,7 +34,7 @@ cd venom
 2. Set the top module. This setting is stored in Gowin's local files, so it is not included in the repository:
    **Project → Configuration → Synthesize → Top Module/Entity** → `top`
    (the module name, not the file name `top.v`).
-3. Write a program into `src/instructionmemory.v` (see [Writing programs](#writing-programs)). The repository ships with a Fibonacci demo that stores its results in RAM and plays them back on the LEDs.
+3. Write a program into `src/instructionmemory.v` (see [Writing programs](#writing-programs)). The repository ships with a prime number finder (see [Examples](#examples)).
 4. Click **Run All** to synthesize and place & route.
 5. Load the bitstream (`impl/pnr/venom.fs`) onto the board with Gowin Programmer, or with [openFPGALoader](https://github.com/trabucayre/openFPGALoader):
    ```
@@ -43,9 +43,9 @@ cd venom
 
 **What you will see:** the six onboard LEDs show the lower 6 bits of R1 in binary. LED0 is the least significant bit. The onboard LEDs are active-low, so `top.v` inverts the value, and a lit LED means `1`.
 
-**Clock:** `top.v` divides the 27 MHz board clock down to 1 Hz, so the CPU runs one cycle per second. With the Fibonacci demo you can follow every step on the LEDs (see [Examples](#examples)). To run at a different speed, change the limit `24'd13499999` in `top.v`.
+**Clock:** `top.v` divides the 27 MHz board clock down to about 260 kHz, which suits the prime finder (one prime per second). To watch a program run instruction by instruction, slow it down to 1 Hz by changing the limit `24'd51` in `top.v` to `24'd13499999`. The Fibonacci and counter examples below are meant for 1 Hz.
 
-**Reset:** the button on pin 88 is used as reset. Because reset is synchronous and the CPU clock is 1 Hz, hold the button for at least one second.
+**Reset:** the button on pin 88 is used as reset. Reset is synchronous, so at 1 Hz hold the button for at least one second.
 
 > If the LEDs show the result of only the first instruction (for example `5` instead of `8` with the example program below), the button works the other way around on your board and the CPU is stuck in reset. Change `.reset(btn)` to `.reset(~btn)` in `src/top.v`.
 
@@ -83,7 +83,27 @@ To write an instruction, replace the 21-bit value on the line of the address you
 
 ### Examples
 
-**Fibonacci + RAM (ships with the repository).** The program computes the Fibonacci numbers 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, shows each one on the LEDs and stores it in RAM[16]–RAM[25]. Then it turns the LEDs off for one cycle and plays the numbers back by reading them from RAM with LOAD, over and over. The playback values come from memory, not from a new calculation, so it shows that STORE and LOAD work. It also exercises forwarding, since almost every instruction uses the result of the one before it.
+**Prime numbers (ships with the repository).** Finds every prime below 64 and shows each one on the LEDs for about a second: 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, then starts again. For each `n` it tries every divisor `d` from 2 up to `n`. Venom has no remainder instruction, so it checks divisibility with `(n / d) * d == n`, using the multi-cycle DIV and MUL. Between primes a nested countdown loop (about 260,000 cycles) keeps the number on the LEDs.
+
+```verilog
+ 3: LDI  R2, 2            ; n = 2
+ 4: LDI  R3, 2            ; d = 2
+ 5: BEQ  R3, R2, 11       ; d == n -> prime
+ 6: DIV  R4, R2, R3       ; q = n / d
+ 7: MUL  R7, R4, R3       ; q * d
+ 8: BEQ  R7, R2, 18       ; divisible -> not prime
+ 9: ADD  R3, R3, R5       ; d++
+10: JUMP 5
+11: MOV  R1, R2           ; show the prime
+12-17:                    ; delay loop
+18: ADD  R2, R2, R5       ; n++
+19: BNE  R2, R6, 4        ; n != 64 -> next n
+20: JUMP 3                ; start again
+```
+
+See `src/instructionmemory.v` for the full program (R0 = 0, R5 = 1 and R6 = 64 are set at addresses 0–2).
+
+**Fibonacci + RAM** (run at 1 Hz). The program computes the Fibonacci numbers 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, shows each one on the LEDs and stores it in RAM[16]–RAM[25]. Then it turns the LEDs off for one cycle and plays the numbers back by reading them from RAM with LOAD, over and over. The playback values come from memory, not from a new calculation, so it shows that STORE and LOAD work. It also exercises forwarding, since almost every instruction uses the result of the one before it.
 
 Venom addresses RAM with a constant (the `data` field), so the loop is unrolled. The first steps:
 
@@ -104,7 +124,7 @@ Venom addresses RAM with a constant (the `data` field), so the loop is unrolled.
 
 See `src/instructionmemory.v` for the full program.
 
-A counter (R1 counts up forever, one step every 2 seconds at 1 Hz: ADD + JUMP, and the JUMP costs one extra cycle for the pipeline flush):
+A counter (R1 counts up forever, one step every 4 seconds at 1 Hz: ADD + JUMP, and the taken JUMP costs two extra cycles for the pipeline flush):
 
 ```verilog
 8'b00000000: outinst = 21'b1011_000_000_001_00000000; // LDI  R1, 0
@@ -181,29 +201,39 @@ Unused fields are set to `0`.
 
 ### Pipeline
 
-Venom Extended splits each instruction into three stages, and three instructions are in flight at the same time:
+Venom Extended splits each instruction into four stages, and four instructions are in flight at the same time:
 
 ```
-[Fetch] ──fetchreg──▶ [Execute] ──wbdata / wbreg / wbenable──▶ [Write-back]
- read instmem          decode, read registers,                    write the
-                       ALU, RAM, write-back mux                   register file
+[Fetch] ──fetchreg──▶ [Decode] ──ex registers──▶ [Execute] ──wbdata / wbreg / wbenable──▶ [Write-back]
+ read instmem          split fields,               ALU, RAM,                                  write the
+                       control unit,               write-back mux,                            register file
+                       read registers              branch decision
 ```
 
-- **Fetch → Execute:** `fetchreg` (21 bits) holds the fetched instruction.
+- **Fetch → Decode:** `fetchreg` (21 bits) holds the fetched instruction.
+- **Decode → Execute:** the `ex` registers hold everything Execute needs: the two operand values (`exA`, `exB`), the opcode (`exop`), the `data` field (`exdata`), the destination register (`exout`), the source register numbers (`exopregA`, `exopregB`, used for forwarding) and the decoded control signals (`exwen`, `exload`, `exstore`, `exldi`, `exjmp`, `exbeq`, `exbne`, `exhalt`).
 - **Execute → Write-back:** `wbdata` (value), `wbreg` (destination register) and `wbenable` (write or not) hold the result for one cycle before it is written.
 
-**Branch flush (control hazard).** A branch is resolved in Execute, and by then the next instruction has already been fetched. When a branch is taken (`jump || (beq && zero) || (bne && !zero)`), `fetchreg` is loaded with a NOP instead, so the wrong instruction is thrown away. Every taken branch costs one cycle.
-
-**Forwarding (data hazard).** An instruction may need a register that the previous instruction has not written yet. In that case the value is taken directly from `wbdata`:
+**Branch flush (control hazard).** A branch is resolved in Execute:
 
 ```verilog
-assign fwdA = (wbenable && (wbreg == opregA)) ? wbdata : reddataA;
-assign fwdB = (wbenable && (wbreg == opregB)) ? wbdata : reddataB;
+wire branch = exjmp || (exbeq && zero) || (exbne && !zero);
 ```
 
-`fwdA` feeds the ALU's A input and the data written by STORE, `fwdB` feeds the ALU's B input.
+By then two wrong instructions have entered the pipeline, one in Decode and one being fetched. When `branch` is 1, the PC jumps to `exdata`, `fetchreg` is loaded with a NOP and the `ex` control signals are cleared, so both wrong instructions are thrown away. Every taken branch costs two cycles.
 
-**Stall and reset.** While a MUL, DIV or HALT stalls the CPU, `fetchreg` keeps its value so the instruction stays in Execute. On reset, `fetchreg` is cleared to NOP and `wbenable` to 0.
+**Forwarding (data hazard).** An instruction may need a register that an earlier instruction has not written yet. The value is taken from `wbdata` instead, at two points:
+
+```verilog
+// Decode: the instruction two ahead is being written back right now
+assign fwdA   = (wbenable && (wbreg == opregA))   ? wbdata : reddataA;
+// Execute: the instruction directly ahead has just produced its result
+assign exfwdA = (wbenable && (wbreg == exopregA)) ? wbdata : exA;
+```
+
+(and the same for B). `exfwdA` and `exfwdB` feed the ALU, and `exfwdA` is also the value STORE writes to RAM. Because RAM is still read in Execute, a LOAD result can be forwarded to the very next instruction without a stall.
+
+**Stall and reset.** While a MUL, DIV or HALT stalls the CPU, the PC, `fetchreg` and the `ex` registers keep their values, so the instruction stays in Execute. On reset, `fetchreg` is cleared to NOP and the `ex` registers and `wbenable` to 0.
 
 The value written back to the register file comes from a 3-input mux:
 
@@ -213,21 +243,17 @@ The value written back to the register file comes from a 3-input mux:
 
 ### Multi-cycle operations and stalling
 
-The multiplier (`mul8bit.v`, shift-and-add) and divider (`div8bit.v`, repeated subtraction) take several cycles. When a MUL or DIV instruction is decoded:
+The multiplier (`mul8bit.v`, shift-and-add) and divider (`div8bit.v`, repeated subtraction) take several cycles. When a MUL or DIV instruction reaches Execute:
 
 1. A one-cycle `start` pulse is sent to the ALU and the `runi` flag is set.
-2. The `stall` signal holds the PC and `fetchreg`, and blocks register writes.
+2. The `stall` signal holds the PC, `fetchreg` and the `ex` registers, and blocks register writes.
 3. When the ALU raises `done`, the result is written back, `runi` is cleared, and the PC advances.
 
-HALT reuses the same `stall` signal. Since the PC stops, the same HALT instruction is fetched on every cycle, so the CPU stays halted until reset.
+HALT reuses the same `stall` signal (`exhalt`). The whole pipeline freezes with HALT in Execute, so the CPU stays halted until reset.
 
 ### Branching
 
-For BEQ and BNE the ALU computes `regA - regB`, and the `zero` flag is set when the result is zero. The PC's branch input is:
-
-```verilog
-jump || (beq && zero) || (bne && !zero)
-```
+For BEQ and BNE the ALU computes `regA - regB`, and the `zero` flag is set when the result is zero. The PC's branch input is the `branch` signal described in [Pipeline](#pipeline).
 
 ## Source files
 
