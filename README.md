@@ -2,7 +2,9 @@
 
 Venom Extended is the pipelined version of Venom, a simple 8-bit processor written from scratch in Verilog. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
 
-> **Branches:** `main` holds the original single-cycle Venom. `extended` (this branch) holds Venom Extended, which adds a 4-stage pipeline.
+![Venom Extended core](docs/core.svg)
+
+> **Branches:** `main` holds the original single-cycle Venom. `extended` (this branch) holds Venom Extended, which adds a 5-stage pipeline.
 
 ## Overview
 
@@ -10,11 +12,12 @@ Venom Extended is the pipelined version of Venom, a simple 8-bit processor writt
 - 8 general-purpose 8-bit registers (R0–R7)
 - Fixed-length 21-bit instruction word, 16 instructions
 - Separate instruction memory and data memory (256 entries each)
-- 4-stage pipeline (Fetch, Decode, Execute, Write-back) with two-level forwarding and branch flush
+- 5-stage pipeline (Fetch, Decode, Execute, Memory, Write-back) with forwarding from Memory and Write-back, load-use stall and branch flush
+- Fmax of about 95 MHz on the Tang Nano 20K (Gowin timing report)
 - Multiply and divide are multi-cycle and stall the pipeline until they finish
 - Conditional (BEQ, BNE) and unconditional (JUMP) branches
 - The value of R1 is exposed as an output, and the board wrapper shows it on the LEDs
-- The board wrapper divides the 27 MHz clock down to 1 Hz, so you can watch the program run step by step
+- The board wrapper divides the 27 MHz clock down to about 260 kHz (or 1 Hz, to watch a program step by step)
 
 ## Getting started
 
@@ -197,22 +200,21 @@ Unused fields are set to `0`.
 
 ![Venom CPU architecture](docs/architecture.svg)
 
-> The diagram shows the original single-cycle datapath. The pipeline registers described below sit on top of it.
-
 ### Pipeline
 
-Venom Extended splits each instruction into four stages, and four instructions are in flight at the same time:
+Venom Extended splits each instruction into five stages, and five instructions are in flight at the same time:
 
 ```
-[Fetch] ──fetchreg──▶ [Decode] ──ex registers──▶ [Execute] ──wbdata / wbreg / wbenable──▶ [Write-back]
- read instmem          split fields,               ALU, RAM,                                  write the
-                       control unit,               write-back mux,                            register file
-                       read registers              branch decision
+[Fetch] ─fetchreg─▶ [Decode] ─ex regs─▶ [Execute] ─mem regs─▶ [Memory] ─wbdata/wbreg/wbenable─▶ [Write-back]
+ read instmem        split fields,       forwarding,           data memory,                       write the
+                     control unit,       ALU, MUL/DIV,         write-back mux                     register file
+                     read registers      branch decision
 ```
 
 - **Fetch → Decode:** `fetchreg` (21 bits) holds the fetched instruction.
 - **Decode → Execute:** the `ex` registers hold everything Execute needs: the two operand values (`exA`, `exB`), the opcode (`exop`), the `data` field (`exdata`), the destination register (`exout`), the source register numbers (`exopregA`, `exopregB`, used for forwarding) and the decoded control signals (`exwen`, `exload`, `exstore`, `exldi`, `exjmp`, `exbeq`, `exbne`, `exhalt`).
-- **Execute → Write-back:** `wbdata` (value), `wbreg` (destination register) and `wbenable` (write or not) hold the result for one cycle before it is written.
+- **Execute → Memory:** the `mem` registers carry only what the last two stages need: the ALU result (`memalu`), the `data` field (`memdata`, used as the RAM address and as the LDI value), the value STORE writes (`memA`), the destination register (`memout`) and the control signals `memwen`, `memload`, `memstore`, `memldi`.
+- **Memory → Write-back:** `wbdata` (value), `wbreg` (destination register) and `wbenable` (write or not) hold the result for one cycle before it is written.
 
 **Branch flush (control hazard).** A branch is resolved in Execute:
 
@@ -222,18 +224,30 @@ wire branch = exjmp || (exbeq && zero) || (exbne && !zero);
 
 By then two wrong instructions have entered the pipeline, one in Decode and one being fetched. When `branch` is 1, the PC jumps to `exdata`, `fetchreg` is loaded with a NOP and the `ex` control signals are cleared, so both wrong instructions are thrown away. Every taken branch costs two cycles.
 
-**Forwarding (data hazard).** An instruction may need a register that an earlier instruction has not written yet. The value is taken from `wbdata` instead, at two points:
+**Forwarding (data hazard).** An instruction may need a register that an earlier instruction has not written yet. The value is forwarded from the stage that holds it:
 
 ```verilog
-// Decode: the instruction two ahead is being written back right now
-assign fwdA   = (wbenable && (wbreg == opregA))   ? wbdata : reddataA;
-// Execute: the instruction directly ahead has just produced its result
-assign exfwdA = (wbenable && (wbreg == exopregA)) ? wbdata : exA;
+// Decode: an older instruction is being written back right now
+assign fwdA   = (wbenable && (wbreg == opregA)) ? wbdata : reddataA;
+// Execute: the instruction directly ahead is in Memory, the one before it in Write-back
+assign memfwd = memldi ? memdata : memalu;
+assign exfwdA = (memwen && (memout == exopregA)) ? memfwd :
+                ((wbenable && (wbreg == exopregA)) ? wbdata : exA);
 ```
 
-(and the same for B). `exfwdA` and `exfwdB` feed the ALU, and `exfwdA` is also the value STORE writes to RAM. Because RAM is still read in Execute, a LOAD result can be forwarded to the very next instruction without a stall.
+(and the same for B). Memory has priority because it holds the newer value. `memfwd` picks `memdata` for LDI, since an LDI result is the `data` field and not the ALU output. `exfwdA` and `exfwdB` feed the ALU, and `exfwdA` is also the value a STORE carries into Memory.
 
-**Stall and reset.** While a MUL, DIV or HALT stalls the CPU, the PC, `fetchreg` and the `ex` registers keep their values, so the instruction stays in Execute. On reset, `fetchreg` is cleared to NOP and the `ex` registers and `wbenable` to 0.
+**Load-use stall.** A LOAD gets its value from RAM only in Memory, so it cannot be forwarded to the very next instruction. Decode detects this case:
+
+```verilog
+assign loadstall = exload && ((exout == opregA) || (exout == opregB));
+```
+
+When `loadstall` is 1, the PC and `fetchreg` hold, and a bubble (cleared control signals) goes into Execute. One cycle later the LOAD is in Write-back and its value reaches the waiting instruction through forwarding.
+
+**Stall and reset.** While a MUL, DIV or HALT stalls the CPU, the PC, `fetchreg` and the `ex` registers keep their values, so the instruction stays in Execute, and bubbles (`memwen` and `memstore` cleared) go into Memory. On reset, `fetchreg` is cleared to NOP and the `ex` registers, `memwen`, `memstore` and `wbenable` to 0.
+
+**Timing.** The Gowin timing report gives an Fmax of about 95 MHz on the Tang Nano 20K (94.3 MHz with four stages). The critical path runs through Execute: forwarding, ALU, `zero`, `branch`, and the enable of the `ex` registers.
 
 The value written back to the register file comes from a 3-input mux:
 
@@ -246,7 +260,7 @@ The value written back to the register file comes from a 3-input mux:
 The multiplier (`mul8bit.v`, shift-and-add) and divider (`div8bit.v`, repeated subtraction) take several cycles. When a MUL or DIV instruction reaches Execute:
 
 1. A one-cycle `start` pulse is sent to the ALU and the `runi` flag is set.
-2. The `stall` signal holds the PC, `fetchreg` and the `ex` registers, and blocks register writes.
+2. The `stall` signal holds the PC, `fetchreg` and the `ex` registers, and sends bubbles into Memory.
 3. When the ALU raises `done`, the result is written back, `runi` is cleared, and the PC advances.
 
 HALT reuses the same `stall` signal (`exhalt`). The whole pipeline freezes with HALT in Execute, so the CPU stays halted until reset.
@@ -259,9 +273,9 @@ For BEQ and BNE the ALU computes `regA - regB`, and the `zero` flag is set when 
 
 | File | Module | Description |
 |------|--------|-------------|
-| `src/top.v` | `top` | Tang Nano 20K wrapper: 1 Hz clock divider, reset button, LEDs |
+| `src/top.v` | `top` | Tang Nano 20K wrapper: clock divider (~260 kHz), reset button, LEDs |
 | `src/venom.cst` | | Tang Nano 20K pin assignments |
-| `src/datapath.v` | `datapath` | CPU core: connects all components, pipeline registers, forwarding and flush |
+| `src/datapath.v` | `datapath` | CPU core: connects all components, pipeline registers, forwarding, hazard detection and flush |
 | `src/pc.v` | `pcounter` | Program counter (reset, stall, branch) |
 | `src/instructionmemory.v` | `instmem` | Instruction memory, the program lives here |
 | `src/instructions.v` | `instructions` | Splits the instruction word into fields |
