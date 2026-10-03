@@ -23,10 +23,19 @@ module datapath(
     reg exhalt;
     reg [2:0] exopregA;
     reg [2:0] exopregB;
+    reg [7:0] memalu;
+    reg [7:0] memdata;
+    reg [7:0] memA;
+    reg [2:0] memout;
+    reg memwen;
+    reg memload;
+    reg memstore;
+    reg memldi;
     wire [7:0] data;
     wire [7:0] pc;
     wire polystart = ispoly&&!runi;
     wire halt;
+    wire loadstall;
     wire stall = (runi ? !aludone : ispoly) || exhalt;
     wire jump;
     wire beq;
@@ -34,13 +43,15 @@ module datapath(
     wire zero;
     wire [7:0] muxresult;
     wire branch = exjmp || (exbeq && zero) || (exbne && !zero);
+    wire [7:0] memfwd;
+    assign memfwd = memldi ? memdata : memalu;
     pcounter pcmodule(
         .address(exdata),
         .pc(pc),
         .jump(branch),
         .reset(reset),
         .clk(clk),
-        .stall(stall)
+        .stall(stall || loadstall)
     );
     wire [20:0] outinsmem;
     instmem insmemmodule(
@@ -95,8 +106,11 @@ module datapath(
     wire [7:0] exfwdB;
     assign fwdA = (wbenable && (wbreg == opregA)) ? wbdata : reddataA;
     assign fwdB = (wbenable && (wbreg == opregB)) ? wbdata : reddataB;
-    assign exfwdA = (wbenable && (wbreg == exopregA)) ? wbdata: exA;
-    assign exfwdB = (wbenable && (wbreg == exopregB)) ? wbdata: exB;
+    assign exfwdA = (memwen && (memout == exopregA)) ? memfwd :
+                ((wbenable && (wbreg == exopregA)) ? wbdata : exA);
+    assign exfwdB = (memwen && (memout == exopregB)) ? memfwd :
+                ((wbenable && (wbreg == exopregB)) ? wbdata : exB);
+    assign loadstall = exload && ((exout == opregA) || (exout == opregB));
     wire [7:0] aluresult;
     wire aludone;
     wire ispoly;
@@ -115,16 +129,16 @@ module datapath(
     wire [7:0] ramdata;
     datamemory datamemory(
         .clk(clk),
-        .address(exdata),
-        .wrtenable(exstore),
-        .wrtdata(exfwdA),
+        .address(memdata),
+        .wrtenable(memstore),
+        .wrtdata(memA),
         .reddata(ramdata)
     );
     mux mux(
-    .a(aluresult),
+    .a(memalu),
     .b(ramdata),
-    .c(exdata),
-    .select({exldi , exload}),
+    .c(memdata),
+    .select({memldi, memload}),
     .muxrslt(muxresult)
     );
     reg runi;
@@ -144,7 +158,7 @@ module datapath(
     always @(posedge clk) begin
         if (reset)
         fetchreg <= NOP;
-        else if (stall)
+        else if (stall || loadstall)
         fetchreg <= fetchreg;
         else if (branch)
         fetchreg <= NOP;
@@ -154,11 +168,11 @@ module datapath(
     end
     always @(posedge clk) begin
         wbdata <= muxresult;
-        wbreg <= exout;
+        wbreg <= memout;
         if (reset)
         wbenable <= 0;
         else 
-        wbenable <= exwen && !stall;
+        wbenable <= memwen;
     end
     always @(posedge clk) begin
         if (reset) begin
@@ -185,6 +199,15 @@ module datapath(
             exbeq <= 0;
             exbne <= 0;
             exhalt <= 0;
+        end
+        else if (loadstall) begin
+            exwen <= 0;
+            exload <= 0;
+            exstore <= 0;
+            exjmp <= 0;
+            exbeq <= 0;
+            exbne <= 0;
+            exhalt <= 0;
         end     
         else if (!stall) begin
             exA <= fwdA;
@@ -204,6 +227,21 @@ module datapath(
             exopregB <= opregB;
     end
 end
+    always @(posedge clk) begin
+        if (reset) begin
+            memwen <= 0;
+            memstore <= 0;
+        end else begin
+            memalu <= aluresult;
+            memdata <= exdata;
+            memA <= exfwdA;
+            memout <= exout;
+            memwen <= exwen && !stall;
+            memload <= exload;
+            memstore <= exstore && !stall;
+            memldi <= exldi;
+        end
+    end
     
         
 
