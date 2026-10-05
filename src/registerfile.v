@@ -15,8 +15,8 @@ module regfile(
         R[wrtslct] <= wrtdata;
     end
 end
-    assign reddataA = R[redslctA];
-    assign reddataB = R[redslctB];
+    assign reddataA = (redslctA == 0) ? 32'b0 : R[redslctA];
+    assign reddataB = (redslctB == 0) ? 32'b0 : R[redslctB];
     assign r1out = R[1];
 endmodule
  
