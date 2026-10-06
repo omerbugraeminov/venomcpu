@@ -1,6 +1,6 @@
 module alu(
-    input [7:0] a,
-    input [7:0] b,
+    input [31:0] a,
+    input [31:0] b,
     input [3:0] op,
     input clk,
     input reset,
@@ -8,28 +8,28 @@ module alu(
     output reg done,
     output reg ispoly,
     output reg zero,
-    output reg [7:0] result
+    output reg [31:0] result
     );
     wire addcout;
-    wire [7:0] addresult;
-    adder8bit adder(
+    wire [31:0] addresult;
+    adder32bit adder(
     .a(a),
     .b(b),
     .cin(1'b0),
     .sum(addresult),
     .cout(addcout)
     );
-    wire [7:0] diff;
+    wire [31:0] diff;
     wire subcout;
-    sub8bit sub(
+    sub32bit sub(
     .a(a),
     .b(b),
     .cout(subcout),
     .diff(diff)
     );
-    wire [15:0] multresult;
+    wire [63:0] multresult;
     wire muldone;
-    mul8bit mult(
+    mul32bit mult(
     .a(a),
     .b(b),
     .clk(clk),
@@ -38,10 +38,10 @@ module alu(
     .result(multresult),
     .done(muldone)
     );
-    wire [7:0] quotient;
-    wire [7:0] divresult;
+    wire [31:0] quotient;
+    wire [31:0] divresult;
     wire divdone;
-    div8bit div(
+    div32bit div(
     .a(a),
     .b(b),
     .reset(reset),
@@ -64,7 +64,7 @@ module alu(
     done = 1'b1;
     end
     4'b0100: begin
-    result = multresult[7:0];
+    result = multresult[31:0];
     done = muldone;
     end
     4'b0101: begin
@@ -96,7 +96,7 @@ module alu(
     done = 1'b1;
     end
     default: begin
-    result = 8'b0;
+    result = 32'b0;
     done = 1'b1;
     end
     endcase
@@ -110,7 +110,7 @@ module alu(
         ispoly = 1'b0;
        end
     always @(*) begin
-        if (result == 8'b0)
+        if (result == 32'b0)
             zero = 1'b1;
         else 
             zero = 1'b0;
