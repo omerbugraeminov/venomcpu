@@ -13,11 +13,13 @@
         <File path="src/controlunit.v" type="file.verilog" enable="1"/>
         <File path="src/datamemory.v" type="file.verilog" enable="1"/>
         <File path="src/datapath.v" type="file.verilog" enable="1"/>
+        <File path="src/div32bit.v" type="file.verilog" enable="1"/>
         <File path="src/div8bit.v" type="file.verilog" enable="1"/>
         <File path="src/fulladder.v" type="file.verilog" enable="1"/>
         <File path="src/halfadder.v" type="file.verilog" enable="1"/>
         <File path="src/instructionmemory.v" type="file.verilog" enable="1"/>
         <File path="src/instructions.v" type="file.verilog" enable="1"/>
+        <File path="src/mul32bit.v" type="file.verilog" enable="1"/>
         <File path="src/mul8bit.v" type="file.verilog" enable="1"/>
         <File path="src/mux.v" type="file.verilog" enable="1"/>
         <File path="src/pc.v" type="file.verilog" enable="1"/>

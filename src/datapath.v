@@ -4,7 +4,7 @@ module datapath(
     input start,
     output [7:0] r1
 );
-    reg [20:0] fetchreg;
+    reg [31:0] fetchreg;
     reg [31:0] wbdata;
     reg [4:0] wbreg;
     reg wbenable;
@@ -53,22 +53,26 @@ module datapath(
         .clk(clk),
         .stall(stall || loadstall)
     );
-    wire [20:0] outinsmem;
+    wire [31:0] outinsmem;
     instmem insmemmodule(
         .address(pc),
         .outinst(outinsmem)
     );
-    wire [3:0] opcode;
+    wire [6:0] opcode;
     wire [4:0] opregA;
     wire [4:0] opregB;
     wire [4:0] outreg;
+    wire [2:0] funct3;
+    wire [6:0] funct7;
     instructions inst(
         .inst(fetchreg),
         .opcode(opcode),
-        .regA(opregA),
-        .regB(opregB),
-        .outreg(outreg),
-        .data(data)
+        .rs1(opregA),
+        .rs2(opregB),
+        .rd(outreg),
+        .imm(data),
+        .funct3(funct3),
+        .funct7(funct7)
     );
     wire wenable;
     wire load;
@@ -154,7 +158,7 @@ module datapath(
                 runi <= 1'b0;
             end
     end
-    localparam NOP = 21'b0;
+    localparam NOP = 32'h00000013;
     always @(posedge clk) begin
         if (reset)
         fetchreg <= NOP;
