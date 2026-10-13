@@ -1,32 +1,61 @@
 module controlunit(
-    input [3:0] opcode,
-    output jump,
-    output reg wenable,
-    output store,
-    output load,
-    output beq,
-    output halt,
-    output [1:0] select,
-    output ldi,
-    output bne
+    input [6:0] opcode,
+    output reg regwrite,
+    output reg alusrc,
+    output reg memread,
+    output reg branch,
+    output reg memwrite,
+    output reg jal,
+    output reg jalr,
+    output reg [1:0] wbsel
     );
-    localparam nop = 4'b0000;
-    assign jump = (opcode == 4'b0001);
-    assign load = (opcode == 4'b1001);
-    assign store = (opcode == 4'b1010);
-    assign ldi = (opcode == 4'b1011);
-    assign beq = (opcode == 4'b1100);
-    assign halt = (opcode == 4'b1101);
-    assign bne = (opcode == 4'b1111);
+    localparam OPR = 7'b0110011;
+    localparam OPIMM = 7'b0010011;
+    localparam OPLOAD = 7'b0000011;
+    localparam OPSTORE = 7'b0100011;
+    localparam OPBRANCH = 7'b1100011;
+    localparam OPJAL = 7'b1101111;
+    localparam OPJALR = 7'b1100111;
+    localparam OPLUI = 7'b0110111;
+    localparam OPAUIPC = 7'b0010111;
     always @(*) begin
-        case(opcode)
-        4'b0010, 4'b0011, 4'b0100, 4'b0101, 4'b0110,
-        4'b0111, 4'b1000, 4'b1001, 4'b1011, 4'b1110 :wenable = 1'b1;
-        default: wenable = 1'b0;
+        case (opcode)
+            OPR: begin 
+                regwrite = 1; alusrc = 0; memread = 0; branch = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00;
+            end
+            OPIMM: begin
+                regwrite = 1; alusrc = 1; memread = 0; branch = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00;
+            end
+            OPLOAD: begin 
+                regwrite = 1; alusrc = 1; memread = 1; branch = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b01;
+            end
+            OPSTORE: begin
+                regwrite = 0; alusrc = 1; memread = 0; branch = 0;
+                memwrite = 1; jal = 0; jalr = 0; wbsel = 2'b00;
+            end
+            OPBRANCH: begin
+                regwrite = 0; alusrc = 0; memread = 0; branch = 1;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00;
+            end
+            OPLUI: begin
+                regwrite = 1; alusrc = 0; memread = 0; branch = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b10;
+            end
+            OPJAL: begin
+                regwrite = 1; alusrc = 0; memread = 0; branch = 0;
+                memwrite = 0; jal = 1; jalr = 0; wbsel = 2'b11;
+            end
+            OPJALR: begin   
+                regwrite = 1; alusrc = 1; memread = 0; branch = 0;
+                memwrite = 0; jal = 0; jalr = 1; wbsel = 2'b11;
+            end
+            default: begin
+                regwrite = 0; alusrc = 0; memread = 0; branch = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00;
+            end
     endcase
     end
-    assign select = {ldi, load};
-
-    
-    
 endmodule
