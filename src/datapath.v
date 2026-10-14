@@ -10,17 +10,15 @@ module datapath(
     reg wbenable;
     reg [31:0] exA;
     reg [31:0] exB;
-    reg [3:0] exop;
+    reg [4:0] exop;
     reg [31:0] exdata;
     reg [4:0] exout;
     reg exwen;
     reg exload;
     reg exstore;
-    reg exldi;
     reg exjmp;
     reg exbeq;
     reg exbne;
-    reg exhalt;
     reg [4:0] exopregA;
     reg [4:0] exopregB;
     reg [31:0] memalu;
@@ -28,27 +26,22 @@ module datapath(
     reg [31:0] memA;
     reg [4:0] memout;
     reg memwen;
-    reg memload;
     reg memstore;
-    reg memldi;
+    reg [1:0] memwbsel;
     wire [31:0] data;
     wire [7:0] pc;
     wire polystart = ispoly&&!runi;
-    wire halt;
     wire loadstall;
-    wire stall = (runi ? !aludone : ispoly) || exhalt;
-    wire jump;
-    wire beq;
-    wire bne;
+    wire stall = (runi ? !aludone : ispoly);
     wire zero;
     wire [31:0] muxresult;
-    wire branch = exjmp || (exbeq && zero) || (exbne && !zero);
+    wire flush = exjmp || (exbeq && zero) || (exbne && !zero);
     wire [31:0] memfwd;
-    assign memfwd = memldi ? memdata : memalu;
+    assign memfwd = (memwbsel == 2'b10) ? memdata : memalu;
     pcounter pcmodule(
         .address(exdata),
         .pc(pc),
-        .jump(branch),
+        .jump(flush),
         .reset(reset),
         .clk(clk),
         .stall(stall || loadstall)
@@ -74,22 +67,33 @@ module datapath(
         .funct3(funct3),
         .funct7(funct7)
     );
-    wire wenable;
-    wire load;
-    wire store;
-    wire [1:0] select;
-    wire ldi;
+    reg [1:0] exwbsel;
+    wire regwrite;
+    wire alusrc;
+    wire memread;
+    wire memwrite;
+    wire branch;
+    wire jal;
+    wire jalr;
+    wire [1:0] wbsel;
+    reg exbranch;
+    reg exjal;
+    reg exjalr;
+    reg exalusrc;
+    wire [4:0] aluop;
     controlunit cu(
         .opcode(opcode),
-        .jump(jump),
-        .wenable(wenable),
-        .load(load),
-        .store(store),
-        .select(select),
-        .ldi(ldi),
-        .beq(beq),
-        .halt(halt),
-        .bne(bne)
+        .regwrite(regwrite),
+        .alusrc(alusrc),
+        .memread(memread),
+        .memwrite(memwrite),
+        .branch(branch),
+        .jal(jal),
+        .jalr(jalr),
+        .wbsel(wbsel),
+        .funct3(funct3),
+        .funct7(funct7),
+        .aluop(aluop)
     );
     wire [31:0] reddataA;
     wire [31:0] reddataB;
@@ -118,12 +122,14 @@ module datapath(
     wire [31:0] aluresult;
     wire aludone;
     wire ispoly;
+    wire [31:0] aluimmb;
+    assign aluimmb = exalusrc ? exdata: exfwdB;
     alu alu(
         .clk(clk),
         .reset(reset),
         .start(polystart),
         .a(exfwdA),
-        .b(exfwdB),
+        .b(aluimmb),
         .op(exop),
         .result(aluresult),
         .done(aludone),
@@ -133,7 +139,7 @@ module datapath(
     wire [31:0] ramdata;
     datamemory datamemory(
         .clk(clk),
-        .address(memdata),
+        .address(memalu),
         .wrtenable(memstore),
         .wrtdata(memA),
         .reddata(ramdata)
@@ -142,7 +148,7 @@ module datapath(
     .a(memalu),
     .b(ramdata),
     .c(memdata),
-    .select({memldi, memload}),
+    .select(memwbsel),
     .muxrslt(muxresult)
     );
     reg runi;
@@ -164,7 +170,7 @@ module datapath(
         fetchreg <= NOP;
         else if (stall || loadstall)
         fetchreg <= fetchreg;
-        else if (branch)
+        else if (flush)
         fetchreg <= NOP;
         else 
         fetchreg <= outinsmem;
@@ -188,45 +194,50 @@ module datapath(
             exwen <= 0;
             exload <= 0;
             exstore <= 0;
-            exldi <= 0;
             exjmp <= 0;
             exbeq <= 0;
             exbne <= 0;
-            exhalt <= 0;
             exopregA <= 0;
             exopregB <= 0;
+            exwbsel <= 0;
+            exalusrc <= 0;
+            exbranch <= 0;
+            exjal <=0;
+            exjalr <=0;
         end
-        else if (branch) begin
+        else if (flush) begin
             exwen <= 0;
             exstore <= 0;
             exjmp <= 0;
             exbeq <= 0;
             exbne <= 0;
-            exhalt <= 0;
+            exbranch <= 0;
+            exjal <= 0;
+            exjalr <= 0;
+            exload <= 0;
         end
         else if (loadstall) begin
             exwen <= 0;
             exload <= 0;
             exstore <= 0;
-            exjmp <= 0;
-            exbeq <= 0;
-            exbne <= 0;
-            exhalt <= 0;
+            exbranch <= 0;
+            exjal <= 0;
+            exjalr <= 0;
         end     
         else if (!stall) begin
             exA <= fwdA;
             exB <= fwdB;
-            exop <= opcode;
+            exop <= aluop;
             exdata <= data;
             exout <= outreg;
-            exwen <= wenable;
-            exload <= load;
-            exstore <= store;
-            exldi <= ldi;
-            exjmp <= jump;
-            exbeq <= beq;
-            exbne <= bne;
-            exhalt <= halt;
+            exwen <= regwrite;
+            exload <= memread;
+            exstore <= memwrite;
+            exwbsel <= wbsel;
+            exbranch <= branch;
+            exjal <= jal;
+            exjalr <= jalr;
+            exalusrc <= alusrc;
             exopregA <= opregA;
             exopregB <= opregB;
     end
@@ -238,12 +249,11 @@ end
         end else begin
             memalu <= aluresult;
             memdata <= exdata;
-            memA <= exfwdA;
+            memA <= exfwdB;
             memout <= exout;
             memwen <= exwen && !stall;
-            memload <= exload;
             memstore <= exstore && !stall;
-            memldi <= exldi;
+            memwbsel <= exwbsel;
         end
     end
     
