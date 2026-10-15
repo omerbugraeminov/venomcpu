@@ -68,7 +68,8 @@ module alu(
     .start(start),
     .quotient(quotient),
     .remainder(divresult),
-    .done(divdone)
+    .done(divdone),
+    .aluop(op)
     );
     
     always @(*) begin
