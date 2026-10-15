@@ -29,7 +29,7 @@ module datapath(
     reg memstore;
     reg [1:0] memwbsel;
     wire [31:0] data;
-    wire [7:0] pc;
+    wire [31:0] pc;
     wire polystart = ispoly&&!runi;
     wire loadstall;
     wire stall = (runi ? !aludone : ispoly);
@@ -37,6 +37,8 @@ module datapath(
     wire [31:0] muxresult;
     wire flush = exjmp || (exbeq && zero) || (exbne && !zero);
     wire [31:0] memfwd;
+    reg [31:0] idpc;
+    reg [31:0] expc;
     assign memfwd = (memwbsel == 2'b10) ? memdata : memalu;
     pcounter pcmodule(
         .address(exdata),
@@ -48,7 +50,7 @@ module datapath(
     );
     wire [31:0] outinsmem;
     instmem insmemmodule(
-        .address(pc),
+        .address(pc[9:2]),
         .outinst(outinsmem)
     );
     wire [6:0] opcode;
@@ -112,13 +114,13 @@ module datapath(
     wire [31:0] fwdB;
     wire [31:0] exfwdA;
     wire [31:0] exfwdB;
-    assign fwdA = (wbenable && (wbreg == opregA)) ? wbdata : reddataA;
-    assign fwdB = (wbenable && (wbreg == opregB)) ? wbdata : reddataB;
-    assign exfwdA = (memwen && (memout == exopregA)) ? memfwd :
-                ((wbenable && (wbreg == exopregA)) ? wbdata : exA);
-    assign exfwdB = (memwen && (memout == exopregB)) ? memfwd :
-                ((wbenable && (wbreg == exopregB)) ? wbdata : exB);
-    assign loadstall = exload && ((exout == opregA) || (exout == opregB));
+    assign fwdA = (wbenable && (wbreg == opregA)&& (wbreg != 0)) ? wbdata : reddataA;
+    assign fwdB = (wbenable && (wbreg == opregB)&& (wbreg != 0)) ? wbdata : reddataB;
+    assign exfwdA = (memwen && (memout == exopregA)&& (memout != 0)) ? memfwd :
+                ((wbenable && (wbreg == exopregA)&& (wbreg != 0)) ? wbdata : exA);
+    assign exfwdB = (memwen && (memout == exopregB)&& (memout != 0)) ? memfwd :
+                ((wbenable && (wbreg == exopregB)&& (wbreg != 0)) ? wbdata : exB);
+    assign loadstall = exload && (exout != 0) && ((exout == opregA) || (exout == opregB));
     wire [31:0] aluresult;
     wire aludone;
     wire ispoly;
@@ -166,14 +168,22 @@ module datapath(
     end
     localparam NOP = 32'h00000013;
     always @(posedge clk) begin
-        if (reset)
-        fetchreg <= NOP;
-        else if (stall || loadstall)
-        fetchreg <= fetchreg;
-        else if (flush)
-        fetchreg <= NOP;
-        else 
-        fetchreg <= outinsmem;
+        if (reset) begin
+            fetchreg <= NOP;
+            idpc <= 0;
+        end
+        else if (stall || loadstall) begin
+            fetchreg <= fetchreg;
+            idpc <= idpc;
+        end
+        else if (flush) begin
+            fetchreg <= NOP;
+            idpc <= 0;
+        end
+        else begin
+            fetchreg <= outinsmem;
+            idpc <= pc;
+        end
 
     end
     always @(posedge clk) begin
@@ -204,6 +214,7 @@ module datapath(
             exbranch <= 0;
             exjal <=0;
             exjalr <=0;
+            expc <= 0;
         end
         else if (flush) begin
             exwen <= 0;
@@ -240,6 +251,7 @@ module datapath(
             exalusrc <= alusrc;
             exopregA <= opregA;
             exopregB <= opregB;
+            expc <= idpc;
     end
 end
     always @(posedge clk) begin

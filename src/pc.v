@@ -1,10 +1,10 @@
 module pcounter(
-    input [7:0] address,
+    input [31:0] address,
     input jump,
     input clk,
     input reset,
     input stall,
-    output reg [7:0] pc
+    output reg [31:0] pc
 
     );
     always @(posedge clk)
@@ -16,7 +16,7 @@ module pcounter(
     else if (jump)
         pc <= address;
     else 
-        pc <= pc + 1;
+        pc <= pc + 4;
     end
     
 endmodule 
