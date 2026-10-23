@@ -7,6 +7,7 @@ module controlunit(
     output reg memwrite,
     output reg jal,
     output reg jalr,
+    output reg auipc,
     output reg [1:0] wbsel,
     input [2:0] funct3,
     input [6:0] funct7,
@@ -42,39 +43,43 @@ module controlunit(
     always @(*) begin
         case (opcode)
             OPR: begin 
-                regwrite = 1; alusrc = 0; memread = 0; branch = 0;
+                auipc = 0; regwrite = 1; alusrc = 0; memread = 0; branch = 0;
                 memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; 
             end
             OPIMM: begin
-                regwrite = 1; alusrc = 1; memread = 0; branch = 0;
+                auipc = 0; regwrite = 1; alusrc = 1; memread = 0; branch = 0;
                 memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00;
             end
             OPLOAD: begin 
-                regwrite = 1; alusrc = 1; memread = 1; branch = 0;
+                auipc = 0; regwrite = 1; alusrc = 1; memread = 1; branch = 0;
                 memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b01;
             end
             OPSTORE: begin
-                regwrite = 0; alusrc = 1; memread = 0; branch = 0;
+                auipc = 0; regwrite = 0; alusrc = 1; memread = 0; branch = 0;
                 memwrite = 1; jal = 0; jalr = 0; wbsel = 2'b00;
             end
             OPBRANCH: begin
-                regwrite = 0; alusrc = 0; memread = 0; branch = 1;
+                auipc = 0; regwrite = 0; alusrc = 0; memread = 0; branch = 1;
                 memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00;
             end
             OPLUI: begin
-                regwrite = 1; alusrc = 0; memread = 0; branch = 0;
+                auipc = 0; regwrite = 1; alusrc = 0; memread = 0; branch = 0;
                 memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b10;
             end
             OPJAL: begin
-                regwrite = 1; alusrc = 0; memread = 0; branch = 0;
+                auipc = 0; regwrite = 1; alusrc = 0; memread = 0; branch = 0;
                 memwrite = 0; jal = 1; jalr = 0; wbsel = 2'b11;
             end
             OPJALR: begin   
-                regwrite = 1; alusrc = 1; memread = 0; branch = 0;
+                auipc = 0; regwrite = 1; alusrc = 1; memread = 0; branch = 0;
                 memwrite = 0; jal = 0; jalr = 1; wbsel = 2'b11;
             end
+            OPAUIPC: begin
+                auipc = 1; regwrite = 1; alusrc = 1; memread = 0;branch = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00;
+            end
             default: begin
-                regwrite = 0; alusrc = 0; memread = 0; branch = 0;
+                auipc = 0; regwrite = 0; alusrc = 0; memread = 0; branch = 0;
                 memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00;
             end
     endcase

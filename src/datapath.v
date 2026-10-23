@@ -38,7 +38,9 @@ module datapath(
     wire [31:0] memfwd;
     reg [31:0] idpc;
     reg [31:0] expc;
-    assign memfwd = (memwbsel == 2'b10) ? memdata : memalu;
+    reg [31:0] mempc4;
+    assign memfwd = (memwbsel == 2'b10) ? memdata :
+                    (memwbsel == 2'b11) ? mempc4 : memalu;
     pcounter pcmodule(
         .address(target),
         .pc(pc),
@@ -75,10 +77,12 @@ module datapath(
     wire memwrite;
     wire branch;
     wire jal;
+    wire auipc;
     wire jalr;
     wire [1:0] wbsel;
     reg exbranch;
     reg exjal;
+    reg exauipc;
     reg exjalr;
     reg exalusrc;
     wire [4:0] aluop;
@@ -90,6 +94,7 @@ module datapath(
         .memwrite(memwrite),
         .branch(branch),
         .jal(jal),
+        .auipc(auipc),
         .jalr(jalr),
         .wbsel(wbsel),
         .funct3(funct3),
@@ -123,13 +128,15 @@ module datapath(
     wire [31:0] aluresult;
     wire aludone;
     wire ispoly;
+    wire [31:0] aluA;
+    assign aluA = exauipc ? expc: exfwdA;
     wire [31:0] aluimmb;
     assign aluimmb = exalusrc ? exdata: exfwdB;
     alu alu(
         .clk(clk),
         .reset(reset),
         .start(polystart),
-        .a(exfwdA),
+        .a(aluA),
         .b(aluimmb),
         .op(exop),
         .result(aluresult),
@@ -149,7 +156,8 @@ module datapath(
     .b(ramdata),
     .c(memdata),
     .select(memwbsel),
-    .muxrslt(muxresult)
+    .muxrslt(muxresult),
+    .d(mempc4)
     );
     reg runi;
     always @(posedge clk) begin
@@ -208,6 +216,7 @@ module datapath(
             exalusrc <= 0;
             exbranch <= 0;
             exjal <=0;
+            exauipc <= 0;
             exjalr <=0;
             expc <= 0;
             exf3 <= 0;
@@ -217,6 +226,7 @@ module datapath(
             exstore <= 0;
             exbranch <= 0;
             exjal <= 0;
+            exauipc <= 0;
             exjalr <= 0;
             exload <= 0;
             exf3 <= 0;
@@ -227,6 +237,7 @@ module datapath(
             exstore <= 0;
             exbranch <= 0;
             exjal <= 0;
+            exauipc <= 0;
             exjalr <= 0;
         end     
         else if (!stall) begin
@@ -241,6 +252,7 @@ module datapath(
             exwbsel <= wbsel;
             exbranch <= branch;
             exjal <= jal;
+            exauipc <= auipc;
             exjalr <= jalr;
             exalusrc <= alusrc;
             exopregA <= opregA;
@@ -253,6 +265,7 @@ end
         if (reset) begin
             memwen <= 0;
             memstore <= 0;
+            mempc4 <= 0;
         end else begin
             memalu <= aluresult;
             memdata <= exdata;
@@ -261,6 +274,7 @@ end
             memwen <= exwen && !stall;
             memstore <= exstore && !stall;
             memwbsel <= exwbsel;
+            mempc4 <= expc + 4;
         end
     end
     localparam BEQ = 3'b000;
