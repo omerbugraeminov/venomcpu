@@ -16,9 +16,9 @@ module datapath(
     reg exwen;
     reg exload;
     reg exstore;
-    reg exjmp;
-    reg exbeq;
-    reg exbne;
+    reg [2:0] exf3;
+    reg istkn;
+    wire [31:0] target;
     reg [4:0] exopregA;
     reg [4:0] exopregB;
     reg [31:0] memalu;
@@ -33,15 +33,14 @@ module datapath(
     wire polystart = ispoly&&!runi;
     wire loadstall;
     wire stall = (runi ? !aludone : ispoly);
-    wire zero;
     wire [31:0] muxresult;
-    wire flush = exjmp || (exbeq && zero) || (exbne && !zero);
+    wire flush = ((exbranch &&istkn) || (exjal) || (exjalr));
     wire [31:0] memfwd;
     reg [31:0] idpc;
     reg [31:0] expc;
     assign memfwd = (memwbsel == 2'b10) ? memdata : memalu;
     pcounter pcmodule(
-        .address(exdata),
+        .address(target),
         .pc(pc),
         .jump(flush),
         .reset(reset),
@@ -135,8 +134,7 @@ module datapath(
         .op(exop),
         .result(aluresult),
         .done(aludone),
-        .ispoly(ispoly),
-        .zero(zero)
+        .ispoly(ispoly)
     );
     wire [31:0] ramdata;
     datamemory datamemory(
@@ -204,9 +202,6 @@ module datapath(
             exwen <= 0;
             exload <= 0;
             exstore <= 0;
-            exjmp <= 0;
-            exbeq <= 0;
-            exbne <= 0;
             exopregA <= 0;
             exopregB <= 0;
             exwbsel <= 0;
@@ -215,17 +210,16 @@ module datapath(
             exjal <=0;
             exjalr <=0;
             expc <= 0;
+            exf3 <= 0;
         end
         else if (flush) begin
             exwen <= 0;
             exstore <= 0;
-            exjmp <= 0;
-            exbeq <= 0;
-            exbne <= 0;
             exbranch <= 0;
             exjal <= 0;
             exjalr <= 0;
             exload <= 0;
+            exf3 <= 0;
         end
         else if (loadstall) begin
             exwen <= 0;
@@ -252,6 +246,7 @@ module datapath(
             exopregA <= opregA;
             exopregB <= opregB;
             expc <= idpc;
+            exf3 <= funct3;
     end
 end
     always @(posedge clk) begin
@@ -268,7 +263,53 @@ end
             memwbsel <= exwbsel;
         end
     end
-    
+    localparam BEQ = 3'b000;
+    localparam BNE = 3'b001;
+    localparam BLT = 3'b100;
+    localparam BGE = 3'b101;
+    localparam BLTU = 3'b110;
+    localparam BGEU = 3'b111;
+    always @(*) begin
+        if(exf3 == BEQ) begin
+            if(exfwdA == exfwdB)
+                istkn = 1;
+            else
+                istkn = 0;
+            end
+        else if (exf3 == BNE) begin
+            if(exfwdA != exfwdB)
+                istkn = 1;
+            else 
+                istkn = 0;
+            end
+        else if (exf3 == BLT) begin
+            if($signed(exfwdA) < $signed(exfwdB))
+                istkn = 1;
+            else 
+                istkn = 0;
+            end
+        else if (exf3 == BGE) begin
+            if($signed(exfwdA) >= $signed(exfwdB))
+                istkn = 1;
+            else 
+                istkn = 0;
+            end
+        else if(exf3 == BLTU) begin
+            if(exfwdA < exfwdB) 
+                istkn = 1;
+            else
+                istkn = 0;
+            end
+        else if (exf3 == BGEU) begin
+            if(exfwdA >= exfwdB)
+                istkn = 1;
+            else 
+                istkn = 0;
+            end
+        else
+            istkn = 0;
+        end
+    assign target = exjalr ? ((exfwdA + exdata)&~32'd1): expc + exdata;
         
 
 endmodule

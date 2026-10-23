@@ -7,7 +7,6 @@ module alu(
     input start,
     output reg done,
     output reg ispoly,
-    output reg zero,
     output reg [31:0] result
     );
     localparam ALUADD = 5'd0;
@@ -160,18 +159,7 @@ module alu(
         ispoly = 1'b1;
         else
         ispoly = 1'b0;
-       end
-    always @(*) begin
-        if (result == 32'b0)
-            zero = 1'b1;
-        else 
-            zero = 1'b0;
-        end
-
-        
-        
-
-        
+       end    
 
 endmodule
     
