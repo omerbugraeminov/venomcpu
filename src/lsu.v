@@ -25,7 +25,7 @@ module lsu(
         .clk(clk),
         .address(address[9:2]),
         .byen(byen),
-        .wrtdata(wrtdata),
+        .wrtdata(storedata),
         .reddata(ramdata)
     );
 
