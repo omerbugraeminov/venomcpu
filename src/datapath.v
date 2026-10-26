@@ -39,6 +39,7 @@ module datapath(
     reg [31:0] idpc;
     reg [31:0] expc;
     reg [31:0] mempc4;
+    reg [2:0] memf3;
     assign memfwd = (memwbsel == 2'b10) ? memdata :
                     (memwbsel == 2'b11) ? mempc4 : memalu;
     pcounter pcmodule(
@@ -143,17 +144,18 @@ module datapath(
         .done(aludone),
         .ispoly(ispoly)
     );
-    wire [31:0] ramdata;
-    datamemory datamemory(
+    wire [31:0] loaddata;
+    lsu lsu(
         .clk(clk),
         .address(memalu),
         .wrtenable(memstore),
         .wrtdata(memA),
-        .reddata(ramdata)
+        .funct3(memf3),
+        .loaddata(loaddata)
     );
     mux mux(
     .a(memalu),
-    .b(ramdata),
+    .b(loaddata),
     .c(memdata),
     .select(memwbsel),
     .muxrslt(muxresult),
@@ -266,6 +268,7 @@ end
             memwen <= 0;
             memstore <= 0;
             mempc4 <= 0;
+            memf3 <= 0;
         end else begin
             memalu <= aluresult;
             memdata <= exdata;
@@ -275,6 +278,7 @@ end
             memstore <= exstore && !stall;
             memwbsel <= exwbsel;
             mempc4 <= expc + 4;
+            memf3 <= exf3;
         end
     end
     localparam BEQ = 3'b000;
@@ -324,6 +328,6 @@ end
             istkn = 0;
         end
     assign target = exjalr ? ((exfwdA + exdata)&~32'd1): expc + exdata;
-        
+    
 
 endmodule
