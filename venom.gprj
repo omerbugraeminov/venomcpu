@@ -17,7 +17,6 @@
         <File path="src/div8bit.v" type="file.verilog" enable="1"/>
         <File path="src/fulladder.v" type="file.verilog" enable="1"/>
         <File path="src/halfadder.v" type="file.verilog" enable="1"/>
-        <File path="src/instructionmemory.v" type="file.verilog" enable="1"/>
         <File path="src/instructions.v" type="file.verilog" enable="1"/>
         <File path="src/lsu.v" type="file.verilog" enable="1"/>
         <File path="src/mul32bit.v" type="file.verilog" enable="1"/>

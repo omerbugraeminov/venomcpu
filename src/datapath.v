@@ -51,10 +51,6 @@ module datapath(
         .stall(stall || loadstall)
     );
     wire [31:0] outinsmem;
-    instmem insmemmodule(
-        .address(pc[9:2]),
-        .outinst(outinsmem)
-    );
     wire [6:0] opcode;
     wire [4:0] opregA;
     wire [4:0] opregB;
@@ -151,7 +147,9 @@ module datapath(
         .wrtenable(memstore),
         .wrtdata(memA),
         .funct3(memf3),
-        .loaddata(loaddata)
+        .loaddata(loaddata),
+        .addressB(pc),
+        .reddataB(outinsmem)
     );
     mux mux(
     .a(memalu),

@@ -4,7 +4,9 @@ module lsu(
     input wrtenable,
     input [31:0] wrtdata,
     input [2:0] funct3,
-    output reg [31:0] loaddata
+    output reg [31:0] loaddata,
+    input [31:0] addressB,
+    output [31:0] reddataB
     );
     localparam LB  = 3'b000;
     localparam LH  = 3'b001;
@@ -23,10 +25,12 @@ module lsu(
 
     datamemory ram(
         .clk(clk),
-        .address(address[9:2]),
+        .addressA(address[9:2]),
         .byen(byen),
         .wrtdata(storedata),
-        .reddata(ramdata)
+        .reddataA(ramdata),
+        .addressB(addressB[9:2]),
+        .reddataB(reddataB)
     );
 
     always @(*) begin
