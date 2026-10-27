@@ -1,154 +1,262 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1000" width="1400" height="1000" font-family="SF Pro Display, Segoe UI, Helvetica Neue, Helvetica, Arial, sans-serif" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYToyOGZiY2RmZi1kODUyLTQyMTktOWYzZS05MDRkYmVmMTJhZTAAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaEI3Azzc8vXKiS6+UnuansUAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDpkZmRlODcyYy1lYzc2LTQyYzUtODE4Ni01MmI0ZGEzNDAxZDNscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoUaoAqQ4qiqqtaO5krYL8iAAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggBx43JyCUi5wGUbONYGclHg58FVg9XcrWafGT28dzSBCkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaF9NpODpLaqFB7Qz2/V4jpkAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCCMeQYiE8m0rftlzSmm6BHSlpGn2mBRCZBdkD/f6BBNAmRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjvZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjI4ZmJjZGZmLWQ4NTItNDIxOS05ZjNlLTkwNGRiZWYxMmFlMC9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmIxMTg2OTdmLTJkNzUtNGEwZi05MjQ3LTc5Y2RmZGNiM2Y0MXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCAHHjcnIJSLnAZRs41gZyUeDnwVWD1dytZp8ZPbx3NIEKJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFgg4/SwhRvQ3nl2e0MCtY27AVn1BJa6nADRaEIJnGi76LuiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggwi28DrmCb5O3VwOj1K/ss+yXgB/SsZl3mI0y9/fnuZB0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQANELujQAkOsAaCycny3Nktl150hdTn6RmqSrOeNpJlXA4TLy1jH39V4s5pXBxFnij2n4f829gr6f+zrCFeBktY=</c2pa:manifest></metadata>
-  <defs>
-    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#7cc4ff"/>
-      <stop offset="0.5" stop-color="#b48cff"/>
-      <stop offset="1" stop-color="#ff7ab6"/>
-    </linearGradient>
-    <linearGradient id="pkg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3a3d46"/>
-      <stop offset="0.5" stop-color="#1c1e24"/>
-      <stop offset="1" stop-color="#34373f"/>
-    </linearGradient>
-    <linearGradient id="die" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#15171d"/>
-      <stop offset="1" stop-color="#0d0e12"/>
-    </linearGradient>
-    <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f6fd6"/><stop offset="1" stop-color="#1a3f86"/></linearGradient>
-    <linearGradient id="gCyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1fb5c9"/><stop offset="1" stop-color="#0e6878"/></linearGradient>
-    <linearGradient id="gOrange" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f29a3a"/><stop offset="1" stop-color="#a35a12"/></linearGradient>
-    <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fc46e"/><stop offset="1" stop-color="#1c7a40"/></linearGradient>
-    <linearGradient id="gPurple" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a6cf0"/><stop offset="1" stop-color="#5a33a8"/></linearGradient>
-    <linearGradient id="gPink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e95aa0"/><stop offset="1" stop-color="#93245c"/></linearGradient>
-    <linearGradient id="gYellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8c547"/><stop offset="1" stop-color="#8f7514"/></linearGradient>
-    <linearGradient id="gGray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b606c"/><stop offset="1" stop-color="#33363e"/></linearGradient>
-    <pattern id="sram" width="10" height="10" patternUnits="userSpaceOnUse">
-      <rect width="10" height="10" fill="none"/>
-      <path d="M0,0 L10,0 M0,0 L0,10" stroke="#ffffff" stroke-opacity="0.13" stroke-width="1"/>
-    </pattern>
-    <pattern id="logic" width="6" height="6" patternUnits="userSpaceOnUse">
-      <circle cx="3" cy="3" r="0.8" fill="#ffffff" fill-opacity="0.12"/>
-    </pattern>
-    <pattern id="pins" width="16" height="16" patternUnits="userSpaceOnUse">
-      <rect x="4" y="4" width="8" height="8" rx="1.5" fill="#c9a24a" fill-opacity="0.55"/>
-    </pattern>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="40"/>
-    </filter>
-    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#000" flood-opacity="0.6"/>
-    </filter>
-    <style>
-      .blk{stroke:#ffffff;stroke-opacity:0.18;stroke-width:1}
-      .bn{fill:#ffffff;font-size:17px;font-weight:600;text-anchor:middle}
-      .bs{fill:#ffffff;fill-opacity:0.72;font-size:12px;text-anchor:middle}
-      .stat{fill:#f5f5f7;font-size:40px;font-weight:700;text-anchor:middle}
-      .statl{fill:#86868b;font-size:14px;text-anchor:middle}
-    </style>
-  </defs>
-
-  <rect width="1400" height="1000" fill="#000000"/>
-
-  <!-- header -->
-  <text x="700" y="88" text-anchor="middle" style="font-size:52px;font-weight:700;fill:url(#title)">Venom32-V</text>
-  <text x="700" y="126" text-anchor="middle" style="font-size:19px;fill:#a1a1a6">A 32-bit RISC-V core (RV32IM), designed by hand in Verilog.</text>
-
-  <!-- ambient glow -->
-  <ellipse cx="700" cy="500" rx="420" ry="260" fill="#6a4cff" fill-opacity="0.22" filter="url(#glow)"/>
-
-  <!-- package -->
-  <rect x="190" y="170" width="1020" height="660" rx="34" fill="url(#pkg)"/>
-  <rect x="190" y="170" width="1020" height="660" rx="34" fill="none" stroke="#ffffff" stroke-opacity="0.12"/>
-  <rect x="214" y="194" width="972" height="22" fill="url(#pins)"/>
-  <rect x="214" y="784" width="972" height="22" fill="url(#pins)"/>
-  <rect x="214" y="226" width="22" height="548" fill="url(#pins)"/>
-  <rect x="1164" y="226" width="22" height="548" fill="url(#pins)"/>
-
-  <!-- die -->
-  <rect x="246" y="226" width="908" height="548" rx="10" fill="url(#die)" filter="url(#soft)"/>
-  <rect x="246" y="226" width="908" height="548" rx="10" fill="none" stroke="#ffffff" stroke-opacity="0.10"/>
-
-  <!-- row 1 -->
-  <rect x="266" y="246" width="150" height="160" rx="6" fill="url(#gBlue)" class="blk"/>
-  <rect x="266" y="246" width="150" height="160" rx="6" fill="url(#logic)"/>
-  <text x="341" y="318" class="bn">Fetch</text>
-  <text x="341" y="338" class="bs">PC · fetchreg</text>
-
-  <rect x="426" y="246" width="300" height="160" rx="6" fill="url(#gOrange)" class="blk"/>
-  <rect x="426" y="246" width="300" height="160" rx="6" fill="url(#logic)"/>
-  <text x="576" y="310" class="bn">Decode</text>
-  <text x="576" y="330" class="bs">R / I / S / B / U / J formats · immediate</text>
-  <text x="576" y="346" class="bs">control unit · 18 ALU ops</text>
-
-  <rect x="736" y="246" width="200" height="160" rx="6" fill="url(#gOrange)" class="blk" opacity="0.8"/>
-  <rect x="736" y="246" width="200" height="160" rx="6" fill="url(#logic)"/>
-  <text x="836" y="310" class="bn">Branch Unit</text>
-  <text x="836" y="330" class="bs">comparator · 6 conditions</text>
-  <text x="836" y="346" class="bs">JAL · JALR · AUIPC</text>
-
-  <rect x="946" y="246" width="188" height="160" rx="6" fill="url(#gYellow)" class="blk"/>
-  <rect x="946" y="246" width="188" height="160" rx="6" fill="url(#logic)"/>
-  <text x="1040" y="310" class="bn">Hazard Unit</text>
-  <text x="1040" y="330" class="bs">stall · load-use</text>
-  <text x="1040" y="346" class="bs">branch flush</text>
-
-  <!-- row 2 -->
-  <rect x="266" y="416" width="230" height="170" rx="6" fill="url(#gGreen)" class="blk"/>
-  <rect x="266" y="416" width="230" height="170" rx="6" fill="url(#sram)"/>
-  <text x="381" y="494" class="bn">Register File</text>
-  <text x="381" y="514" class="bs">x0 – x31 · 32 × 32-bit</text>
-
-  <rect x="506" y="416" width="330" height="170" rx="6" fill="url(#gPurple)" class="blk"/>
-  <rect x="506" y="416" width="330" height="170" rx="6" fill="url(#logic)"/>
-  <text x="671" y="494" class="bn">ALU</text>
-  <text x="671" y="514" class="bs">add · sub · shifts · slt · and · or · xor</text>
-
-  <rect x="846" y="416" width="140" height="80" rx="6" fill="url(#gPink)" class="blk"/>
-  <rect x="846" y="416" width="140" height="80" rx="6" fill="url(#logic)"/>
-  <text x="916" y="452" class="bn">MUL</text>
-  <text x="916" y="472" class="bs">signed · 64-bit</text>
-  <rect x="846" y="506" width="140" height="80" rx="6" fill="url(#gPink)" class="blk"/>
-  <rect x="846" y="506" width="140" height="80" rx="6" fill="url(#logic)"/>
-  <text x="916" y="542" class="bn">DIV</text>
-  <text x="916" y="562" class="bs">long division</text>
-
-  <rect x="996" y="416" width="138" height="170" rx="6" fill="url(#gYellow)" class="blk" opacity="0.8"/>
-  <rect x="996" y="416" width="138" height="170" rx="6" fill="url(#logic)"/>
-  <text x="1065" y="490" class="bn">Forwarding</text>
-  <text x="1065" y="510" class="bs">MEM → EX</text>
-  <text x="1065" y="526" class="bs">WB → EX · WB → ID</text>
-
-  <!-- row 3 -->
-  <rect x="266" y="596" width="320" height="158" rx="6" fill="url(#gCyan)" class="blk"/>
-  <rect x="266" y="596" width="320" height="158" rx="6" fill="url(#sram)"/>
-  <text x="426" y="660" class="bn">Unified RAM</text>
-  <text x="426" y="680" class="bs">1 KB · dual-port · code + data</text>
-  <text x="426" y="696" class="bs">block RAM</text>
-  <rect x="596" y="596" width="140" height="158" rx="6" fill="url(#gCyan)" class="blk" opacity="0.8"/>
-  <rect x="596" y="596" width="140" height="158" rx="6" fill="url(#logic)"/>
-  <text x="666" y="660" class="bn">LSU</text>
-  <text x="666" y="680" class="bs">byte · half · word</text>
-  <text x="666" y="696" class="bs">byte enables</text>
-
-  <rect x="746" y="596" width="190" height="158" rx="6" fill="url(#gGreen)" class="blk" opacity="0.8"/>
-  <rect x="746" y="596" width="190" height="158" rx="6" fill="url(#logic)"/>
-  <text x="841" y="668" class="bn">Write-back</text>
-  <text x="841" y="688" class="bs">4-input mux</text>
-
-  <rect x="946" y="596" width="188" height="158" rx="6" fill="url(#gGray)" class="blk"/>
-  <rect x="946" y="596" width="188" height="158" rx="6" fill="url(#logic)"/>
-  <text x="1040" y="660" class="bn">Clock &amp; I/O</text>
-  <text x="1040" y="680" class="bs">divider · reset</text>
-  <text x="1040" y="696" class="bs">x1 → LEDs</text>
-
-  <!-- stats -->
-  <line x1="190" y1="868" x2="1210" y2="868" stroke="#ffffff" stroke-opacity="0.1"/>
-  <text x="317" y="926" class="stat">5</text>
-  <text x="317" y="954" class="statl">pipeline stages</text>
-  <text x="572" y="926" class="stat">32-bit</text>
-  <text x="572" y="954" class="statl">datapath · 32 registers</text>
-  <text x="827" y="926" class="stat">RV32IM</text>
-  <text x="827" y="954" class="statl">RISC-V instruction set</text>
-  <text x="1082" y="926" class="stat">63 MHz</text>
-  <text x="1082" y="954" class="statl">Fmax on Tang Nano 20K</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1120" width="1600" height="1120" font-family="SF Pro Display, Segoe UI, Helvetica Neue, Helvetica, Arial, sans-serif" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTpjYzFmODdmZS02Yzc0LTRhNGEtOWY2Zi0zODg0Zjg5ZWIwMzUAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaDtoFO0CjKzl0sgVYHM4zQ4AAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDowNjcwZTJlMC1jMWUzLTRjZTYtYmE0YS1mNzc4YjY1MzkzN2RscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNo3AP3iiCI7m1yGq8OBjx+2gAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggu5L9PCzhBLBR9Vt+IADm3RIqHV99juVKT97uTf6O2PukZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaBxmIJ7BcpoGrpNSDLb/QcEAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCBnC7SX+l3JxXiw1jP006q+CMTKzJJg6bAeR7EK7jgpjmRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjvZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOmNjMWY4N2ZlLTZjNzQtNGE0YS05ZjZmLTM4ODRmODllYjAzNS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmQzZTU0MzhiLTc3YjktNDc2YS05Nzc5LTVhZWRkZjkxNGZlZHJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCC7kv08LOEEsFH1W34gAObdEiodX32O5UpP3u5N/o7Y+6JjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggXvAb0LAJSlDiag5NQCrFQiyufRtDnH4c1wiIpOHc9x2iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggvsxXyixme27wy16rOkMFt1E7jg0WA1bOtWn/lMn92050Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQBJCwTJmV6ROYW9oL8uF6XDmqEiEMNGNI2ncF81OOVRhVzBqHQBcbSxF+QHlnSObHPlHx/HjH08ML2WNv5er8fE=</c2pa:manifest></metadata>
+<defs>
+<linearGradient id="title" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7cc4ff"/><stop offset="0.5" stop-color="#b48cff"/><stop offset="1" stop-color="#ff7ab6"/></linearGradient>
+<linearGradient id="die" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a1c23"/><stop offset="0.55" stop-color="#101116"/><stop offset="1" stop-color="#16181e"/></linearGradient>
+<linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a8f9c"/><stop offset="0.35" stop-color="#3b3e47"/><stop offset="0.7" stop-color="#6b707c"/><stop offset="1" stop-color="#2a2c33"/></linearGradient>
+<linearGradient id="hl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="0.12" stop-color="#fff" stop-opacity="0.04"/><stop offset="1" stop-color="#000" stop-opacity="0.25"/></linearGradient>
+<radialGradient id="glowA" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6a4cff" stop-opacity="0.55"/><stop offset="1" stop-color="#6a4cff" stop-opacity="0"/></radialGradient>
+<radialGradient id="glowB" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1fb5ff" stop-opacity="0.35"/><stop offset="1" stop-color="#1fb5ff" stop-opacity="0"/></radialGradient>
+<radialGradient id="glowC" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ff5ab0" stop-opacity="0.30"/><stop offset="1" stop-color="#ff5ab0" stop-opacity="0"/></radialGradient>
+<pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="0.75" fill="#fff" fill-opacity="0.16"/></pattern>
+<pattern id="cells" width="8" height="6" patternUnits="userSpaceOnUse"><rect x="1" y="1" width="6" height="4" rx="0.6" fill="#fff" fill-opacity="0.10"/></pattern>
+<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#fff" stroke-opacity="0.14" stroke-width="1.4"/></pattern>
+<filter id="blur60" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="60"/></filter>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.8"/></filter>
+<filter id="bglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<style>
+.bn{fill:#fff;font-size:16px;font-weight:650;letter-spacing:0.2px}
+.bs{fill:#fff;fill-opacity:0.66;font-size:11.5px}
+.tag{fill:#fff;fill-opacity:0.42;font-size:10px;font-weight:600;letter-spacing:2px}
+.stg{fill:#d6d6dc;fill-opacity:0.55;font-size:11px;font-weight:700;letter-spacing:3px;text-anchor:middle}
+.stat{fill:#f5f5f7;font-size:44px;font-weight:700;text-anchor:middle;letter-spacing:-0.5px}
+.statl{fill:#86868b;font-size:14px;text-anchor:middle}
+</style>
+</defs>
+<rect width="1600" height="1120" fill="#000"/>
+<text x="800" y="92" text-anchor="middle" style="font-size:60px;font-weight:700;fill:url(#title);letter-spacing:-1px">Venom32-V</text>
+<text x="800" y="132" text-anchor="middle" style="font-size:20px;fill:#a1a1a6">A 32-bit RISC-V core, designed by hand in Verilog.</text>
+<ellipse cx="560" cy="520" rx="420" ry="260" fill="url(#glowA)" filter="url(#blur60)"/>
+<ellipse cx="1080" cy="470" rx="360" ry="220" fill="url(#glowC)" filter="url(#blur60)"/>
+<ellipse cx="800" cy="760" rx="560" ry="140" fill="url(#glowB)" filter="url(#blur60)"/>
+<rect x="194" y="184" width="1212" height="672" rx="18" fill="url(#edge)" filter="url(#shadow)"/>
+<rect x="200" y="190" width="1200" height="660" rx="13" fill="url(#die)"/>
+<rect x="208" y="198" width="1184" height="644" rx="8" fill="none" stroke="#fff" stroke-opacity="0.07" stroke-dasharray="2 3"/>
+<text x="294.0" y="244" class="stg">IF</text>
+<line x1="230" y1="254" x2="358" y2="254" stroke="#fff" stroke-opacity="0.12"/>
+<text x="524.0" y="244" class="stg">ID</text>
+<line x1="384" y1="254" x2="664" y2="254" stroke="#fff" stroke-opacity="0.12"/>
+<text x="870.0" y="244" class="stg">EX</text>
+<line x1="690" y1="254" x2="1050" y2="254" stroke="#fff" stroke-opacity="0.12"/>
+<text x="1156.0" y="244" class="stg">MEM</text>
+<line x1="1076" y1="254" x2="1236" y2="254" stroke="#fff" stroke-opacity="0.12"/>
+<text x="1321.0" y="244" class="stg">WB</text>
+<line x1="1262" y1="254" x2="1380" y2="254" stroke="#fff" stroke-opacity="0.12"/>
+<rect x="369.0" y="264" width="4" height="382" rx="2" fill="#c7d2fe" fill-opacity="0.55"/>
+<rect x="366.0" y="264" width="10" height="382" rx="5" fill="#a5b4fc" fill-opacity="0.12"/>
+<rect x="675.0" y="264" width="4" height="382" rx="2" fill="#c7d2fe" fill-opacity="0.55"/>
+<rect x="672.0" y="264" width="10" height="382" rx="5" fill="#a5b4fc" fill-opacity="0.12"/>
+<rect x="1061.0" y="264" width="4" height="382" rx="2" fill="#c7d2fe" fill-opacity="0.55"/>
+<rect x="1058.0" y="264" width="10" height="382" rx="5" fill="#a5b4fc" fill-opacity="0.12"/>
+<rect x="1247.0" y="264" width="4" height="382" rx="2" fill="#c7d2fe" fill-opacity="0.55"/>
+<rect x="1244.0" y="264" width="10" height="382" rx="5" fill="#a5b4fc" fill-opacity="0.12"/>
+<linearGradient id="g1" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#3b82f6" stop-opacity="0.95"/><stop offset="1" stop-color="#1e3a8a" stop-opacity="0.95"/></linearGradient>
+<g><rect x="224" y="270" width="140" height="120" rx="7" fill="url(#g1)"/></g>
+<rect x="224" y="270" width="140" height="120" rx="7" fill="url(#dots)"/>
+<rect x="224" y="270" width="140" height="120" rx="7" fill="url(#hl)"/>
+<rect x="224.5" y="270.5" width="139" height="119" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="294.0" y="328.0" class="bn" text-anchor="middle">PC</text>
+<text x="294.0" y="348.0" class="bs" text-anchor="middle">+4 · target</text>
+<linearGradient id="g2" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#3b82f6" stop-opacity="0.95"/><stop offset="1" stop-color="#1e3a8a" stop-opacity="0.95"/></linearGradient>
+<g><rect x="224" y="402" width="140" height="238" rx="7" fill="url(#g2)"/></g>
+<rect x="224" y="402" width="140" height="238" rx="7" fill="url(#hatch)"/>
+<rect x="224" y="402" width="140" height="238" rx="7" fill="url(#hl)"/>
+<rect x="224.5" y="402.5" width="139" height="237" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="294.0" y="511.0" class="bn" text-anchor="middle">Fetch</text>
+<text x="294.0" y="531.0" class="bs" text-anchor="middle">RAM port B</text>
+<text x="294.0" y="547.0" class="bs" text-anchor="middle">fetchreg</text>
+<linearGradient id="g3" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#f59e0b" stop-opacity="0.95"/><stop offset="1" stop-color="#9a4d07" stop-opacity="0.95"/></linearGradient>
+<g><rect x="378" y="270" width="292" height="128" rx="7" fill="url(#g3)"/></g>
+<rect x="378" y="270" width="292" height="128" rx="7" fill="url(#dots)"/>
+<rect x="378" y="270" width="292" height="128" rx="7" fill="url(#hl)"/>
+<rect x="378.5" y="270.5" width="291" height="127" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="524.0" y="324.0" class="bn" text-anchor="middle">Decode</text>
+<text x="524.0" y="344.0" class="bs" text-anchor="middle">R · I · S · B · U · J</text>
+<text x="524.0" y="360.0" class="bs" text-anchor="middle">immediate generator</text>
+<linearGradient id="g4" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity="0.95"/><stop offset="1" stop-color="#14532d" stop-opacity="0.95"/></linearGradient>
+<g><rect x="378" y="410" width="170" height="230" rx="7" fill="url(#g4)"/></g>
+<rect x="388" y="420.0" width="150" height="5.0" fill="#fff" fill-opacity="0.02"/>
+<rect x="388" y="426.6" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="433.1" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="439.7" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="446.2" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="452.8" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="459.4" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="465.9" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="472.5" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="479.1" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="485.6" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="492.2" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="498.8" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="505.3" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="511.9" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="518.4" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="525.0" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="531.6" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="538.1" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="544.7" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="551.2" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="557.8" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="564.4" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="570.9" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="577.5" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="584.1" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="590.6" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="597.2" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="603.8" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="610.3" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="616.9" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="388" y="623.4" width="150" height="5.0" fill="#fff" fill-opacity="0.06"/>
+<rect x="378" y="410" width="170" height="230" rx="7" fill="url(#hl)"/>
+<rect x="378.5" y="410.5" width="169" height="229" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="463.0" y="515.0" class="bn" text-anchor="middle">Register File</text>
+<text x="463.0" y="535.0" class="bs" text-anchor="middle">x0 – x31</text>
+<text x="463.0" y="551.0" class="bs" text-anchor="middle">32 × 32-bit</text>
+<linearGradient id="g5" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#eab308" stop-opacity="0.95"/><stop offset="1" stop-color="#7a5b06" stop-opacity="0.95"/></linearGradient>
+<g><rect x="560" y="410" width="110" height="112" rx="7" fill="url(#g5)"/></g>
+<rect x="560" y="410" width="110" height="112" rx="7" fill="url(#dots)"/>
+<rect x="560" y="410" width="110" height="112" rx="7" fill="url(#hl)"/>
+<rect x="560.5" y="410.5" width="109" height="111" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="615.0" y="464.0" class="bn" text-anchor="middle">Control</text>
+<text x="615.0" y="484.0" class="bs" text-anchor="middle">18 ALU ops</text>
+<linearGradient id="g6" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#eab308" stop-opacity="0.95"/><stop offset="1" stop-color="#7a5b06" stop-opacity="0.95"/></linearGradient>
+<g><rect x="560" y="534" width="110" height="106" rx="7" fill="url(#g6)"/></g>
+<rect x="560" y="534" width="110" height="106" rx="7" fill="url(#dots)"/>
+<rect x="560" y="534" width="110" height="106" rx="7" fill="url(#hl)"/>
+<rect x="560.5" y="534.5" width="109" height="105" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="615.0" y="577.0" class="bn" text-anchor="middle">Hazard</text>
+<text x="615.0" y="597.0" class="bs" text-anchor="middle">stall · flush</text>
+<text x="615.0" y="613.0" class="bs" text-anchor="middle">load-use</text>
+<linearGradient id="g7" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#8b5cf6" stop-opacity="0.95"/><stop offset="1" stop-color="#4c1d95" stop-opacity="0.95"/></linearGradient>
+<g filter="url(#bglow)"><rect x="684" y="270" width="372" height="168" rx="7" fill="url(#g7)"/></g>
+<rect x="694.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.1"/>
+<rect x="705.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="716.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="727.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="738.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.1"/>
+<rect x="749.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="760.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="771.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="782.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.1"/>
+<rect x="793.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="804.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="815.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="826.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.1"/>
+<rect x="837.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="848.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="859.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="870.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.1"/>
+<rect x="881.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="892.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="903.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="914.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.1"/>
+<rect x="925.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="936.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="947.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="958.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.1"/>
+<rect x="969.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="980.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="991.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="1002.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.1"/>
+<rect x="1013.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="1024.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="1035.0" y="280" width="8.8" height="148" rx="1" fill="#fff" fill-opacity="0.05"/>
+<rect x="684" y="270" width="372" height="168" rx="7" fill="url(#hl)"/>
+<rect x="684.5" y="270.5" width="371" height="167" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="870.0" y="344.0" class="bn" text-anchor="middle">ALU</text>
+<text x="870.0" y="364.0" class="bs" text-anchor="middle">add · sub · shifts · slt · logic</text>
+<text x="870.0" y="380.0" class="bs" text-anchor="middle">32-bit</text>
+<linearGradient id="g8" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#ec4899" stop-opacity="0.95"/><stop offset="1" stop-color="#831843" stop-opacity="0.95"/></linearGradient>
+<g><rect x="684" y="450" width="128" height="190" rx="7" fill="url(#g8)"/></g>
+<rect x="684" y="450" width="128" height="190" rx="7" fill="url(#hatch)"/>
+<rect x="684" y="450" width="128" height="190" rx="7" fill="url(#hl)"/>
+<rect x="684.5" y="450.5" width="127" height="189" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="748.0" y="535.0" class="bn" text-anchor="middle">MUL</text>
+<text x="748.0" y="555.0" class="bs" text-anchor="middle">signed</text>
+<text x="748.0" y="571.0" class="bs" text-anchor="middle">64-bit result</text>
+<linearGradient id="g9" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fb7185" stop-opacity="0.95"/><stop offset="1" stop-color="#8a1d33" stop-opacity="0.95"/></linearGradient>
+<g><rect x="822" y="450" width="128" height="190" rx="7" fill="url(#g9)"/></g>
+<rect x="822" y="450" width="128" height="190" rx="7" fill="url(#hatch)"/>
+<rect x="822" y="450" width="128" height="190" rx="7" fill="url(#hl)"/>
+<rect x="822.5" y="450.5" width="127" height="189" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="886.0" y="535.0" class="bn" text-anchor="middle">DIV</text>
+<text x="886.0" y="555.0" class="bs" text-anchor="middle">signed</text>
+<text x="886.0" y="571.0" class="bs" text-anchor="middle">long division</text>
+<linearGradient id="g10" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#a78bfa" stop-opacity="0.95"/><stop offset="1" stop-color="#5b3cc4" stop-opacity="0.95"/></linearGradient>
+<g><rect x="960" y="450" width="96" height="90" rx="7" fill="url(#g10)"/></g>
+<rect x="960" y="450" width="96" height="90" rx="7" fill="url(#dots)"/>
+<rect x="960" y="450" width="96" height="90" rx="7" fill="url(#hl)"/>
+<rect x="960.5" y="450.5" width="95" height="89" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="1008.0" y="493.0" class="bn" text-anchor="middle">Branch</text>
+<text x="1008.0" y="513.0" class="bs" text-anchor="middle">6 conditions</text>
+<linearGradient id="g11" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#a78bfa" stop-opacity="0.95"/><stop offset="1" stop-color="#5b3cc4" stop-opacity="0.95"/></linearGradient>
+<g><rect x="960" y="552" width="96" height="88" rx="7" fill="url(#g11)"/></g>
+<rect x="960" y="552" width="96" height="88" rx="7" fill="url(#dots)"/>
+<rect x="960" y="552" width="96" height="88" rx="7" fill="url(#hl)"/>
+<rect x="960.5" y="552.5" width="95" height="87" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="1008.0" y="594.0" class="bn" text-anchor="middle">Forward</text>
+<text x="1008.0" y="614.0" class="bs" text-anchor="middle">MEM · WB</text>
+<linearGradient id="g12" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#06b6d4" stop-opacity="0.95"/><stop offset="1" stop-color="#0e4f63" stop-opacity="0.95"/></linearGradient>
+<g><rect x="1070" y="270" width="172" height="370" rx="7" fill="url(#g12)"/></g>
+<rect x="1080.0" y="280" width="32.0" height="350" rx="3" fill="#fff" fill-opacity="0.07"/>
+<rect x="1080.0" y="280" width="32.0" height="350" rx="3" fill="url(#hatch)"/>
+<rect x="1118.0" y="280" width="32.0" height="350" rx="3" fill="#fff" fill-opacity="0.07"/>
+<rect x="1118.0" y="280" width="32.0" height="350" rx="3" fill="url(#hatch)"/>
+<rect x="1156.0" y="280" width="32.0" height="350" rx="3" fill="#fff" fill-opacity="0.07"/>
+<rect x="1156.0" y="280" width="32.0" height="350" rx="3" fill="url(#hatch)"/>
+<rect x="1194.0" y="280" width="32.0" height="350" rx="3" fill="#fff" fill-opacity="0.07"/>
+<rect x="1194.0" y="280" width="32.0" height="350" rx="3" fill="url(#hatch)"/>
+<rect x="1070" y="270" width="172" height="370" rx="7" fill="url(#hl)"/>
+<rect x="1070.5" y="270.5" width="171" height="369" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="1156.0" y="437.0" class="bn" text-anchor="middle">LSU</text>
+<text x="1156.0" y="457.0" class="bs" text-anchor="middle">byte · half · word</text>
+<text x="1156.0" y="473.0" class="bs" text-anchor="middle">byte enables</text>
+<text x="1156.0" y="489.0" class="bs" text-anchor="middle">sign extension</text>
+<linearGradient id="g13" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity="0.95"/><stop offset="1" stop-color="#14532d" stop-opacity="0.95"/></linearGradient>
+<g><rect x="1256" y="270" width="130" height="180" rx="7" fill="url(#g13)"/></g>
+<rect x="1256" y="270" width="130" height="180" rx="7" fill="url(#dots)"/>
+<rect x="1256" y="270" width="130" height="180" rx="7" fill="url(#hl)"/>
+<rect x="1256.5" y="270.5" width="129" height="179" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="1321.0" y="358.0" class="bn" text-anchor="middle">Write-back</text>
+<text x="1321.0" y="378.0" class="bs" text-anchor="middle">4-input mux</text>
+<linearGradient id="g14" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#6b7280" stop-opacity="0.95"/><stop offset="1" stop-color="#30343c" stop-opacity="0.95"/></linearGradient>
+<g><rect x="1256" y="462" width="130" height="178" rx="7" fill="url(#g14)"/></g>
+<rect x="1256" y="462" width="130" height="178" rx="7" fill="url(#dots)"/>
+<rect x="1256" y="462" width="130" height="178" rx="7" fill="url(#hl)"/>
+<rect x="1256.5" y="462.5" width="129" height="177" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="1321.0" y="541.0" class="bn" text-anchor="middle">Clock &amp; I/O</text>
+<text x="1321.0" y="561.0" class="bs" text-anchor="middle">divider · reset</text>
+<text x="1321.0" y="577.0" class="bs" text-anchor="middle">x1 → LEDs</text>
+<rect x="280.0" y="644" width="28" height="32" fill="#22d3ee" fill-opacity="0.18"/>
+<rect x="283.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<rect x="288.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<rect x="293.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<rect x="298.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<rect x="303.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<text x="316.0" y="662.0" class="tag">PORT B</text>
+<rect x="1142.0" y="644" width="28" height="32" fill="#22d3ee" fill-opacity="0.18"/>
+<rect x="1145.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<rect x="1150.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<rect x="1155.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<rect x="1160.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<rect x="1165.0" y="644" width="2" height="32" fill="#67e8f9" fill-opacity="0.55"/>
+<text x="1178.0" y="662.0" class="tag">PORT A</text>
+<linearGradient id="g15" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#14b8a6" stop-opacity="0.95"/><stop offset="1" stop-color="#134e4a" stop-opacity="0.95"/></linearGradient>
+<g><rect x="224" y="676" width="1152" height="150" rx="7" fill="url(#g15)"/></g>
+<rect x="224" y="676" width="1152" height="150" rx="7" fill="url(#cells)"/>
+<rect x="224" y="676" width="1152" height="150" rx="7" fill="url(#hl)"/>
+<rect x="224.5" y="676.5" width="1151" height="149" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
+<text x="800.0" y="731.0" class="tag" text-anchor="middle">SHARED MEMORY</text>
+<text x="800.0" y="755.0" class="bn" text-anchor="middle">Unified RAM</text>
+<text x="800.0" y="775.0" class="bs" text-anchor="middle">1 KB · dual-port · code + data · block RAM</text>
+<text x="1378" y="836" text-anchor="end" style="font-size:10px;fill:#fff;fill-opacity:0.18;letter-spacing:2px">VENOM32-V · RV32IM · 2026</text>
+<text x="222" y="836" style="font-size:10px;fill:#fff;fill-opacity:0.18;letter-spacing:2px">TANG NANO 20K · GW2AR-18</text>
+<line x1="200" y1="892" x2="1400" y2="892" stroke="#fff" stroke-opacity="0.1"/>
+<text x="350" y="950" class="stat">5</text><text x="350" y="980" class="statl">pipeline stages</text>
+<text x="650" y="950" class="stat">32-bit</text><text x="650" y="980" class="statl">datapath · 32 registers</text>
+<line x1="500" y1="910" x2="500" y2="980" stroke="#fff" stroke-opacity="0.08"/>
+<text x="950" y="950" class="stat">RV32IM</text><text x="950" y="980" class="statl">RISC-V instruction set</text>
+<line x1="800" y1="910" x2="800" y2="980" stroke="#fff" stroke-opacity="0.08"/>
+<text x="1250" y="950" class="stat">63 MHz</text><text x="1250" y="980" class="statl">Fmax on Tang Nano 20K</text>
+<line x1="1100" y1="910" x2="1100" y2="980" stroke="#fff" stroke-opacity="0.08"/>
+<text x="800" y="1040" text-anchor="middle" style="font-size:13px;fill:#6e6e73">~3,300 LUTs (16% of the chip) · forwarding · load-use stall · branch flush · multi-cycle MUL/DIV</text>
 </svg>
