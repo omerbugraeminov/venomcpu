@@ -17,6 +17,7 @@ module instructions(
     localparam OPJALR = 7'b1100111;
     localparam OPLUI = 7'b0110111;
     localparam OPAUIPC = 7'b0010111;
+    localparam OPSYSTEM = 7'b1110011;
     assign opcode = inst[6:0];
     assign rd     = inst[11:7];
     assign funct3 = inst[14:12];
@@ -27,7 +28,7 @@ module instructions(
 
     always @(*) begin
         case (opcode)
-            OPIMM, OPLOAD, OPJALR:   
+            OPIMM, OPLOAD, OPJALR, OPSYSTEM:   
                 imm = {{20{inst[31]}}, inst[31:20]};
             OPSTORE:                 
                 imm = {{20{inst[31]}}, inst[31:25], inst[11:7]};

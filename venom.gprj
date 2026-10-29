@@ -11,6 +11,7 @@
         <File path="src/adder8bit.v" type="file.verilog" enable="1"/>
         <File path="src/alu.v" type="file.verilog" enable="1"/>
         <File path="src/controlunit.v" type="file.verilog" enable="1"/>
+        <File path="src/csr.v" type="file.verilog" enable="1"/>
         <File path="src/datamemory.v" type="file.verilog" enable="1"/>
         <File path="src/datapath.v" type="file.verilog" enable="1"/>
         <File path="src/div32bit.v" type="file.verilog" enable="1"/>

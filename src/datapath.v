@@ -4,6 +4,9 @@ module datapath(
     input start,
     output [7:0] r1
 );
+    reg excsr;
+    wire csr;
+    reg exvalid;
     wire [31:0] lafinal;
     reg [1:0] laoff;    
     reg [2:0] laf3;
@@ -104,7 +107,8 @@ module datapath(
         .wbsel(wbsel),
         .funct3(funct3),
         .funct7(funct7),
-        .aluop(aluop)
+        .aluop(aluop),
+        .csr(csr)
     );
     wire [31:0] reddataA;
     wire [31:0] reddataB;
@@ -239,6 +243,8 @@ module datapath(
             exjalr <=0;
             expc <= 0;
             exf3 <= 0;
+            excsr <= 0;
+            exvalid <= 0;
         end
         else if (flush) begin
             exwen <= 0;
@@ -249,6 +255,8 @@ module datapath(
             exjalr <= 0;
             exload <= 0;
             exf3 <= 0;
+            excsr <= 0;
+            exvalid <= 0;
         end
         else if (loadstall) begin
             exwen <= 0;
@@ -258,6 +266,8 @@ module datapath(
             exjal <= 0;
             exauipc <= 0;
             exjalr <= 0;
+            excsr <= 0;
+            exvalid <= 0;
         end     
         else if (!stall) begin
             exA <= fwdA;
@@ -278,8 +288,11 @@ module datapath(
             exopregB <= opregB;
             expc <= idpc;
             exf3 <= funct3;
+            excsr <= csr;
+            exvalid <= !killid;
     end
 end
+    wire [31:0] csrdata;
     always @(posedge clk) begin
         if (reset) begin
             memwen <= 0;
@@ -287,7 +300,7 @@ end
             mempc4 <= 0;
             memf3 <= 0;
         end else begin
-            memalu <= aluresult;
+            memalu <= excsr ? csrdata : aluresult;
             memdata <= exdata;
             memA <= exfwdB;
             memout <= exout;
@@ -354,5 +367,15 @@ end
             wbreg <= lareg;
         end
     end
-
+    csr csrunit(
+        .clk(clk),
+        .reset(reset),
+        .en(excsr && !stall),
+        .addr(exdata[11:0]),
+        .f3(exf3),
+        .rs1val(exfwdA),
+        .uimm(exopregA),
+        .retire(exvalid && !stall),
+        .rdata(csrdata)
+    );
 endmodule
