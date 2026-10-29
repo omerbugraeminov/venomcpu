@@ -4,10 +4,18 @@ module datapath(
     input start,
     output [7:0] r1
 );
-    reg [31:0] fetchreg;
+    wire [31:0] lafinal;
+    reg [1:0] laoff;    
+    reg [2:0] laf3;
+    reg laload;
     reg [31:0] wbdata;
     reg [4:0] wbreg;
     reg wbenable;
+    reg killid;
+    wire [31:0] instid;
+    reg [31:0] ladata;
+    reg [4:0] lareg;
+    reg laenable;
     reg [31:0] exA;
     reg [31:0] exB;
     reg [4:0] exop;
@@ -58,7 +66,7 @@ module datapath(
     wire [2:0] funct3;
     wire [6:0] funct7;
     instructions inst(
-        .inst(fetchreg),
+        .inst(instid),
         .opcode(opcode),
         .rs1(opregA),
         .rs2(opregB),
@@ -118,10 +126,13 @@ module datapath(
     assign fwdA = (wbenable && (wbreg == opregA)&& (wbreg != 0)) ? wbdata : reddataA;
     assign fwdB = (wbenable && (wbreg == opregB)&& (wbreg != 0)) ? wbdata : reddataB;
     assign exfwdA = (memwen && (memout == exopregA)&& (memout != 0)) ? memfwd :
-                ((wbenable && (wbreg == exopregA)&& (wbreg != 0)) ? wbdata : exA);
+                ((laenable && (lareg == exopregA)&& (lareg != 0)&& !laload) ? ladata :
+                ((wbenable && (wbreg == exopregA) && (wbreg != 0)) ? wbdata : exA));
     assign exfwdB = (memwen && (memout == exopregB)&& (memout != 0)) ? memfwd :
-                ((wbenable && (wbreg == exopregB)&& (wbreg != 0)) ? wbdata : exB);
-    assign loadstall = exload && (exout != 0) && ((exout == opregA) || (exout == opregB));
+                ((laenable && (lareg == exopregB)&& (lareg != 0)&& !laload) ? ladata :
+                ((wbenable && (wbreg == exopregB) && (wbreg != 0)) ? wbdata : exB));
+    assign loadstall = (exload && (exout != 0) && ((exout == opregA) || (exout == opregB))) ||
+                       ((memwbsel == 2'b01) && memwen && (memout != 0) && ((memout == opregA) || (memout == opregB)));
     wire [31:0] aluresult;
     wire aludone;
     wire ispoly;
@@ -141,6 +152,7 @@ module datapath(
         .ispoly(ispoly)
     );
     wire [31:0] loaddata;
+    assign lafinal = laload ? loaddata:ladata;
     lsu lsu(
         .clk(clk),
         .address(memalu),
@@ -149,7 +161,10 @@ module datapath(
         .funct3(memf3),
         .loaddata(loaddata),
         .addressB(pc),
-        .reddataB(outinsmem)
+        .reddataB(outinsmem),
+        .enB(!(stall || loadstall)),
+        .rdoff(laoff),
+        .ldtype(laf3)
     );
     mux mux(
     .a(memalu),
@@ -173,32 +188,36 @@ module datapath(
             end
     end
     localparam NOP = 32'h00000013;
+    assign instid = killid ? NOP:outinsmem;
     always @(posedge clk) begin
         if (reset) begin
-            fetchreg <= NOP;
+            killid <= 1;
             idpc <= 0;
         end
         else if (stall || loadstall) begin
-            fetchreg <= fetchreg;
+            killid <= killid;
             idpc <= idpc;
         end
         else if (flush) begin
-            fetchreg <= NOP;
+            killid <= 1;
             idpc <= 0;
         end
         else begin
-            fetchreg <= outinsmem;
+            killid <= 0;
             idpc <= pc;
         end
 
     end
     always @(posedge clk) begin
-        wbdata <= muxresult;
-        wbreg <= memout;
+        ladata <= muxresult;
+        lareg <= memout;
+        laoff <= memalu[1:0];
+        laf3 <= memf3;
+        laload <= (memwbsel == 2'b01);
         if (reset)
-        wbenable <= 0;
+        laenable <= 0;
         else 
-        wbenable <= memwen;
+        laenable <= memwen;
     end
     always @(posedge clk) begin
         if (reset) begin
@@ -326,6 +345,14 @@ end
             istkn = 0;
         end
     assign target = exjalr ? ((exfwdA + exdata)&~32'd1): expc + exdata;
-    
+    always @(posedge clk) begin
+        if(reset)
+            wbenable <= 0;
+        else begin
+            wbenable <= laenable;
+            wbdata <= lafinal;
+            wbreg <= lareg;
+        end
+    end
 
 endmodule

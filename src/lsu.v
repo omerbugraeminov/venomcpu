@@ -6,7 +6,10 @@ module lsu(
     input [2:0] funct3,
     output reg [31:0] loaddata,
     input [31:0] addressB,
-    output [31:0] reddataB
+    output [31:0] reddataB,
+    input enB,
+    input [1:0] rdoff,
+    input [2:0] ldtype
     );
     localparam LB  = 3'b000;
     localparam LH  = 3'b001;
@@ -25,16 +28,17 @@ module lsu(
 
     datamemory ram(
         .clk(clk),
-        .addressA(address[9:2]),
+        .addressA(address[15:2]),
         .byen(byen),
         .wrtdata(storedata),
         .reddataA(ramdata),
-        .addressB(addressB[9:2]),
-        .reddataB(reddataB)
+        .addressB(addressB[15:2]),
+        .reddataB(reddataB),
+        .Ben(enB)
     );
 
     always @(*) begin
-        case(address[1:0])
+        case(rdoff)
             2'b00: loadbyte = ramdata[7:0];
             2'b01: loadbyte = ramdata[15:8];
             2'b10: loadbyte = ramdata[23:16];
@@ -42,10 +46,10 @@ module lsu(
         endcase
     end
 
-    assign loadbyhalf = address[1] ? ramdata[31:16] : ramdata[15:0];
+    assign loadbyhalf = rdoff[1] ? ramdata[31:16] : ramdata[15:0];
 
     always @(*) begin
-        case(funct3)
+        case(ldtype)
             LB:  loaddata = {{24{loadbyte[7]}}, loadbyte};
             LH:  loaddata = {{16{loadbyhalf[15]}}, loadbyhalf};
             LW:  loaddata = ramdata;

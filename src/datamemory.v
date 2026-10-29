@@ -1,31 +1,40 @@
 module datamemory(
     input clk,
-    input [7:0] addressA,
+    input [13:0] addressA,
     input [3:0] byen,
     input [31:0] wrtdata,
-    input [7:0] addressB,
-    output reg [31:0] reddataB,
-    output reg [31:0] reddataA
+    input [13:0] addressB,
+    output [31:0] reddataB,
+    output [31:0] reddataA,
+    input Ben
     );
-    reg [31:0] mem [0:255];
-    initial $readmemh("program.hex", mem);
-    always @(posedge clk) begin 
-        if(byen[4'd0])
-            mem[addressA][7:0] <= wrtdata[7:0];
-        if(byen[4'd1])
-            mem[addressA][15:8] <= wrtdata[15:8];
-        if(byen[4'd2])
-            mem[addressA][23:16] <= wrtdata[23:16];
-        if(byen[4'd3])
-            mem[addressA][31:24] <= wrtdata[31:24];
-    end
+    genvar i;
+    generate
+        for(i = 0; i < 4; i = i + 1) begin : lane
+            reg [7:0] mem [0:16383];
+            reg [7:0] outA;
+            reg [7:0] outB;
 
-    always @(*) begin
-        reddataA = mem[addressA];
-        reddataB = mem[addressB];
-    end
+            if(i == 0) initial $readmemh("program0.hex", mem);
+            if(i == 1) initial $readmemh("program1.hex", mem);
+            if(i == 2) initial $readmemh("program2.hex", mem);
+            if(i == 3) initial $readmemh("program3.hex", mem);
+
+            always @(posedge clk) begin
+                if(byen[i])
+                    mem[addressA] <= wrtdata[i*8 +: 8];
+                else
+                    outA <= mem[addressA];
+            end
+
+            always @(posedge clk) begin
+                if(Ben)
+                    outB <= mem[addressB];
+            end
+
+            assign reddataA[i*8 +: 8] = outA;
+            assign reddataB[i*8 +: 8] = outB;
+        end
+    endgenerate
 
 endmodule
-
-
-    

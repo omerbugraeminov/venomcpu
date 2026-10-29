@@ -1,6 +1,6 @@
 # Venom32-V
 
-Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M extension (multiply/divide) on a 5-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
+Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M extension (multiply/divide) on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
 
 ![Venom32-V core](docs/core.svg)
 
@@ -13,13 +13,13 @@ Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It imple
 
 - **ISA:** RV32IM. All RV32I computational, load/store, branch and jump instructions, plus all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU). FENCE, ECALL, EBREAK and the CSR instructions are not implemented.
 - 32 general-purpose 32-bit registers (x0–x31), x0 is always 0
-- 5-stage pipeline (Fetch, Decode, Execute, Memory, Write-back) with forwarding, load-use stall and branch flush
+- 6-stage pipeline (Fetch, Decode, Execute, Memory, Load Align, Write-back) with forwarding, load-use stall and branch flush
 - Branches and jumps are resolved in Execute by a dedicated comparator (taken branches cost 2 cycles)
 - Multi-cycle multiplier and divider (signed and unsigned), which stall the pipeline until they finish
-- Unified memory (von Neumann): one dual-port RAM of 1 KB holds both code and data. Port B fetches instructions, port A serves loads and stores
+- Unified memory (von Neumann): one dual-port RAM of 64 KB holds both code and data. Port B fetches instructions, port A serves loads and stores. Reads are clocked, so the RAM maps onto the FPGA's block RAM
 - Byte, halfword and word loads and stores (LB, LH, LW, LBU, LHU, SB, SH, SW) through a load-store unit
-- The program is loaded into RAM from a hex file (`src/program.hex`) with `$readmemh`
-- **On the Tang Nano 20K:** Fmax of about **63 MHz** (Gowin timing report), about 3,300 LUTs (16% of the chip), and the RAM is placed in block RAM (BSRAM)
+- The program is loaded into RAM with `$readmemh` from four hex files, one per byte lane (`src/program0.hex` … `program3.hex`), made from `src/program.hex`
+- **On the Tang Nano 20K:** Fmax of about **63 MHz** (Gowin timing report), about 3,100 logic cells (15% of the chip), and the RAM uses 32 of the 46 block RAMs (BSRAM)
 - The low 8 bits of x1 are exposed as an output, and the board wrapper shows them on the LEDs
 
 ## Getting started
@@ -42,7 +42,7 @@ git checkout venom32-v
 2. Set the top module. This setting is stored in Gowin's local files, so it is not included in the repository:
    **Project → Configuration → Synthesize → Top Module/Entity** → `top`
    (the module name, not the file name `top.v`).
-3. Put your program into `src/program.hex` (see [Writing programs](#writing-programs)). The repository ships with a LED counter.
+3. Put your program into `src/program.hex` and split it into `program0.hex` … `program3.hex` (see [Writing programs](#writing-programs)). The repository ships with a LED counter.
 4. Click **Run All** to synthesize and place & route.
 5. Load the bitstream (`impl/pnr/venom.fs`) onto the board with Gowin Programmer, or with [openFPGALoader](https://github.com/trabucayre/openFPGALoader):
    ```
@@ -57,13 +57,13 @@ git checkout venom32-v
 
 > If the CPU never seems to start, the button may work the other way around on your board and keep the CPU in reset. Change `.reset(btn)` to `.reset(~btn)` in `src/top.v`.
 
-> If Gowin cannot find `program.hex` during synthesis, write the full path in the `$readmemh` line in `src/datamemory.v`.
+> If Gowin cannot find the `program*.hex` files during synthesis, write the full paths in the `$readmemh` lines in `src/datamemory.v`.
 
 ### Using a different board
 
 Only two files are specific to the Tang Nano 20K: `src/top.v` and `src/venom.cst` (plus `src/venom.sdc`, the clock constraint). Everything else is board-independent.
 
-1. **Create a new project** in your FPGA vendor's tool for your chip and add every `.v` file in `src/` except `top.v` and the unused legacy files (see [Source files](#source-files)). Keep `program.hex` where your tool can find it.
+1. **Create a new project** in your FPGA vendor's tool for your chip and add every `.v` file in `src/` except `top.v` and the unused legacy files (see [Source files](#source-files)). Keep `program0.hex` … `program3.hex` where your tool can find them.
 2. **Write your own top module.** The CPU core is `datapath`:
    ```verilog
    datapath cpu(
@@ -93,9 +93,15 @@ Programs are standard RV32IM machine code. `src/program.hex` holds one 32-bit wo
 
 (`$readmemh` does not accept comments after the values like this, the comments here are only for explanation. The file itself must contain only the hex words.)
 
+The RAM is built from four 8-bit byte lanes (see [Memory and the load-store unit](#memory-and-the-load-store-unit)), so the hardware does not read `program.hex` directly. It reads four files, one per lane: `program0.hex` holds byte 0 (bits `[7:0]`) of every word, `program1.hex` byte 1, and so on. `program.hex` stays as the readable source. After every change, regenerate the four files from `src/`:
+
+```
+python3 -c "w=[l.strip() for l in open('program.hex') if l.strip()]; [open('program%d.hex'%b,'w').write('\n'.join(x.zfill(8)[6-2*b:8-2*b] for x in w)+'\n') for b in range(4)]"
+```
+
 Things to keep in mind:
 
-- **Memory map:** RAM is 1 KB, addresses `0x000`–`0x3FF`. Put your code at the bottom and your data above it. Higher addresses wrap around.
+- **Memory map:** RAM is 64 KB, addresses `0x0000`–`0xFFFF`. Put your code at the bottom and your data above it. Higher addresses wrap around.
 - **Ending a program:** there is no HALT instruction. End with a jump to itself, `jal x0, 0` (`0000006f`).
 - **Output:** whatever the program writes to x1 appears on the LEDs.
 - **Alignment:** loads and stores must be naturally aligned (halfwords on even addresses, words on multiples of 4).
@@ -108,7 +114,7 @@ riscv64-unknown-elf-objcopy -O binary prog.o prog.bin
 python3 -c "import sys,struct; d=open('prog.bin','rb').read(); d+=bytes(-len(d)%4); [print('%08x'%w) for (w,) in struct.iter_unpack('<I',d)]" > src/program.hex
 ```
 
-`$readmemh` leaves the remaining RAM words uninitialized, so pad the file to 256 lines with `00000013` (NOP) if you want a clean memory.
+Then split it into the four lane files as shown above. `$readmemh` leaves the remaining RAM words uninitialized (on the FPGA they start as 0, in simulation as `x`).
 
 ### Example: LED counter (ships with the repository)
 
@@ -171,20 +177,21 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 
 ### Pipeline
 
-Each instruction goes through five stages, and five instructions are in flight at the same time:
+Each instruction goes through six stages, and six instructions are in flight at the same time:
 
 ```
-[Fetch] ─fetchreg─▶ [Decode] ─ex regs─▶ [Execute] ─mem regs─▶ [Memory] ─wbdata/wbreg/wbenable─▶ [Write-back]
- read RAM port B     split fields,       forwarding,           load/store via LSU,               write the
- with the PC         immediate,          ALU, MUL/DIV,         write-back mux                    register file
-                     control unit,       branch comparator,
-                     read registers      jump target
+[Fetch] ──▶ [Decode] ─ex regs─▶ [Execute] ─mem regs─▶ [Memory] ─la regs─▶ [Load Align] ─wb regs─▶ [Write-back]
+ RAM port B   split fields,      forwarding,          address to RAM     pick byte/half/word,   write the
+ (clocked)    immediate,         ALU, MUL/DIV,        port A, stores,    sign extension,        register file,
+              control unit,      branch comparator,   result mux         lafinal mux            forward
+              read registers     jump target
 ```
 
-- **Fetch → Decode:** `fetchreg` holds the fetched instruction and `idpc` its address.
+- **Fetch → Decode:** the RAM's own output register holds the fetched instruction (the read is clocked), `idpc` holds its address. `killid` turns the instruction into a NOP after reset or a flush.
 - **Decode → Execute:** the `ex` registers hold everything Execute needs: the two operand values (`exA`, `exB`), the ALU operation (`exop`), the immediate (`exdata`), the destination register (`exout`), the source register numbers (`exopregA`, `exopregB`, used for forwarding), `funct3` (`exf3`, for the branch comparator and the LSU), the instruction's address (`expc`) and the decoded control signals (`exwen`, `exload`, `exstore`, `exalusrc`, `exbranch`, `exjal`, `exjalr`, `exauipc`, `exwbsel`).
 - **Execute → Memory:** the `mem` registers: the ALU result (`memalu`, also the load/store address), the immediate (`memdata`, the LUI value), the value a store writes (`memA`), the return address (`mempc4` = PC + 4), `memf3`, the destination register (`memout`) and the control signals `memwen`, `memstore`, `memwbsel`.
-- **Memory → Write-back:** `wbdata` (value), `wbreg` (destination register) and `wbenable` (write or not) hold the result for one cycle before it is written.
+- **Memory → Load Align:** the `la` registers: the non-load result (`ladata`, from the result mux), the destination register (`lareg`), `laenable`, and what the LSU needs to format a load: the byte offset (`laoff` = address[1:0]), the load type (`laf3`) and `laload`. The RAM's port A output register holds the loaded word.
+- **Load Align → Write-back:** `wbdata` (the final value, `lafinal`), `wbreg` (destination register) and `wbenable` (write or not). The register file is written from these.
 
 ### Control unit
 
@@ -192,7 +199,7 @@ Each instruction goes through five stages, and five instructions are in flight a
 
 The ALU's second operand is either `rs2` or the immediate (`alusrc`). Its first operand is `rs1`, or the instruction's own PC for AUIPC.
 
-The value written back to the register file comes from a 4-input mux (`wbsel`):
+The result is chosen by a 4-input mux (`wbsel`). For loads the value comes from Load Align instead (`lafinal = laload ? loaddata : ladata`):
 
 - `00`: ALU result (arithmetic/logic instructions, AUIPC)
 - `01`: data from the load-store unit (loads)
@@ -217,7 +224,7 @@ wire flush = (exbranch && istkn) || exjal || exjalr;
 assign target = exjalr ? ((exfwdA + exdata) & ~32'd1) : expc + exdata;
 ```
 
-When `flush` is 1, the PC jumps to `target`, `fetchreg` is loaded with a NOP (`addi x0, x0, 0`) and the `ex` control signals are cleared, so the two wrong instructions behind the branch are thrown away. Every taken branch or jump costs two cycles. JAL and JALR write their return address (`mempc4`) through the write-back mux.
+When `flush` is 1, the PC jumps to `target`, `killid` turns the instruction in Decode into a NOP (`addi x0, x0, 0`) and the `ex` control signals are cleared, so the two wrong instructions behind the branch are thrown away. Every taken branch or jump costs two cycles. JAL and JALR write their return address (`mempc4`) through the write-back mux.
 
 ### Forwarding (data hazards)
 
@@ -226,24 +233,26 @@ An instruction may need a register that an earlier instruction has not written y
 ```verilog
 // Decode: an older instruction is being written back right now
 assign fwdA   = (wbenable && (wbreg == opregA) && (wbreg != 0)) ? wbdata : reddataA;
-// Execute: the instruction directly ahead is in Memory, the one before it in Write-back
+// Execute: the three older instructions are in Memory, Load Align and Write-back
 assign memfwd = (memwbsel == 2'b10) ? memdata :
                 (memwbsel == 2'b11) ? mempc4  : memalu;
 assign exfwdA = (memwen && (memout == exopregA) && (memout != 0)) ? memfwd :
-                ((wbenable && (wbreg == exopregA) && (wbreg != 0)) ? wbdata : exA);
+                ((laenable && (lareg == exopregA) && (lareg != 0) && !laload) ? ladata :
+                ((wbenable && (wbreg == exopregA) && (wbreg != 0)) ? wbdata : exA));
 ```
 
-(and the same for B). Memory has priority because it holds the newer value. `memfwd` picks the right value for LUI (immediate) and JAL/JALR (PC + 4). x0 is never forwarded, so writes to x0 are ignored as RISC-V requires. `exfwdA` and `exfwdB` feed the ALU and the branch comparator, `exfwdB` is also the value a store carries into Memory, and `exfwdA` is the base of the JALR target.
+(and the same for B). The newest value wins: Memory first, then Load Align, then Write-back. A load is never forwarded from Load Align: its value comes out of the RAM and the LSU in that stage, and sending it on to the ALU in the same cycle made the longest path of the whole CPU. It is forwarded one cycle later from Write-back, out of a register. `memfwd` picks the right value for LUI (immediate) and JAL/JALR (PC + 4). x0 is never forwarded, so writes to x0 are ignored as RISC-V requires. `exfwdA` and `exfwdB` feed the ALU and the branch comparator, `exfwdB` is also the value a store carries into Memory, and `exfwdA` is the base of the JALR target.
 
 ### Load-use stall
 
-A load gets its value only in Memory, so it cannot be forwarded to the very next instruction. Decode detects this case:
+A load's value is ready to forward only in Write-back. An instruction that needs it must wait in Decode while the load is in Execute or Memory:
 
 ```verilog
-assign loadstall = exload && (exout != 0) && ((exout == opregA) || (exout == opregB));
+assign loadstall = (exload && (exout != 0) && ((exout == opregA) || (exout == opregB))) ||
+                   ((memwbsel == 2'b01) && memwen && (memout != 0) && ((memout == opregA) || (memout == opregB)));
 ```
 
-When `loadstall` is 1, the PC and `fetchreg` hold, and a bubble goes into Execute. One cycle later the load is in Write-back and its value reaches the waiting instruction through forwarding.
+When `loadstall` is 1, the PC and Decode hold, and a bubble goes into Execute. The instruction right after a load waits 2 cycles, one with an instruction in between waits 1, and with two in between there is no wait.
 
 ### Multi-cycle MUL/DIV
 
@@ -252,26 +261,26 @@ The multiplier (`mul32bit.v`, shift-and-add) and the divider (`div32bit.v`, rest
 When a MUL or DIV instruction reaches Execute:
 
 1. A one-cycle `start` pulse is sent to the ALU and the `runi` flag is set.
-2. The `stall` signal holds the PC, `fetchreg` and the `ex` registers, and sends bubbles into Memory.
+2. The `stall` signal holds the PC, Decode and the `ex` registers, and sends bubbles into Memory.
 3. When the ALU raises `done`, the result moves on, `runi` is cleared, and the PC advances.
 
 ### Memory and the load-store unit
 
-Code and data share one RAM (`datamemory.v`, 256 × 32 bit = 1 KB) with two ports:
+Code and data share one RAM (`datamemory.v`, 16384 × 32 bit = 64 KB) with two ports. Both reads are clocked: the address goes in on one clock edge and the data comes out on the next.
 
 - **Port B** (read only) is used by Fetch: `addressB` is the PC.
-- **Port A** (read and write) is used by the Memory stage through the **load-store unit** (`lsu.v`).
+- **Port A** (read and write) is used by the Memory stage through the **load-store unit** (`lsu.v`). The loaded word comes out in Load Align.
 
-RISC-V addresses are byte addresses, while the RAM stores 32-bit words. The LSU splits the address: `address[9:2]` selects the word (RAM line) and `address[1:0]` the byte inside it (little-endian, byte 0 is bits `[7:0]`).
+RISC-V addresses are byte addresses, while the RAM stores 32-bit words. The LSU splits the address: `address[15:2]` selects the word (RAM line) and `address[1:0]` the byte inside it (little-endian, byte 0 is bits `[7:0]`).
 
-- **Loads:** the LSU reads the whole word, picks the byte or halfword, and extends it to 32 bits: with the sign bit for LB/LH, with zeros for LBU/LHU.
+- **Loads:** the RAM returns the whole word in Load Align, where the LSU picks the byte or halfword (using `laoff` and `laf3`) and extends it to 32 bits: with the sign bit for LB/LH, with zeros for LBU/LHU.
 - **Stores:** the RAM has a 4-bit byte enable (`byen`), one bit per byte. The LSU sets it from `funct3` and the address (SW `1111`, SH `0011`/`1100`, SB one bit), and copies the byte or halfword into every lane of the write data, so the enabled lane always holds the right value.
 
-The RAM is initialized from `src/program.hex` with `$readmemh`. Gowin places it in block RAM (8 SDPB blocks on the Tang Nano 20K).
+Inside, the RAM is four separate 8-bit memories, one per byte lane, made with a `generate` loop. Each lane writes its byte only when its `byen` bit is set, and reads otherwise. Each lane is a plain memory with one write enable, which every FPGA tool maps cleanly onto block RAM. Each lane is initialized from its own file (`program0.hex` … `program3.hex`) with `$readmemh`. Gowin places the whole RAM in 32 of the 46 block RAMs of the GW2AR-18. The rest is free for future hardware.
 
 ### Timing and size
 
-The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). The 32-bit adders are built by hand from smaller adders as a ripple-carry chain, which is one of the longer paths. The design uses about 3,300 LUTs, 16% of the GW2AR-18.
+The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). Moving the RAM into clocked block RAM first dropped it to 53 MHz, because a load's data went from the RAM through the LSU and forwarding into the ALU in one cycle. The Load Align stage split that path and brought it back to 63 MHz. The longest path now is forwarding select → ALU → `memalu`. The 32-bit adder uses the FPGA's fast carry chain (`a + b + cin`). The design uses about 3,100 logic cells (15%) and 32 of 46 block RAMs of the GW2AR-18.
 
 ## Source files
 
@@ -286,25 +295,26 @@ The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 
 | `src/controlunit.v` | `controlunit` | Decodes opcode/funct3/funct7 into control signals and the ALU operation |
 | `src/registerfile.v` | `regfile` | 32 × 32-bit register file, x0 reads as 0 |
 | `src/alu.v` | `alu` | 18 operations, `done` and `ispoly` (multi-cycle) flags |
-| `src/adder32bit.v`, `adder8bit.v`, `adder4bit.v`, `adder2bit.v`, `fulladder.v`, `halfadder.v` | | Ripple-carry adder chain |
+| `src/adder32bit.v` | `adder32bit` | 32-bit adder (`a + b + cin`, maps to the carry chain) |
 | `src/sub32bit.v` | `sub32bit` | Subtractor (two's complement) |
 | `src/mul32bit.v` | `mul32bit` | Multi-cycle signed/unsigned multiplier |
 | `src/div32bit.v` | `div32bit` | Multi-cycle signed/unsigned divider |
 | `src/lsu.v` | `lsu` | Load-store unit: byte/halfword selection, sign extension, byte enables |
-| `src/datamemory.v` | `datamemory` | 1 KB dual-port RAM for code and data |
+| `src/datamemory.v` | `datamemory` | 64 KB dual-port RAM for code and data, 4 byte lanes, clocked reads |
 | `src/mux.v` | `mux` | 4-input write-back mux |
-| `src/program.hex` | | The program loaded into RAM at startup |
+| `src/program.hex` | | The program, one 32-bit word per line (readable source) |
+| `src/program0.hex` … `program3.hex` | | The same program split into byte lanes, loaded into RAM at startup |
 
-Left over from the 8-bit versions and not used by Venom32-V: `instructionmemory.v`, `mul8bit.v`, `div8bit.v`, `sub8bit.v`, `tb.v`.
+Left over from the 8-bit versions and not used by Venom32-V: `instructionmemory.v`, `mul8bit.v`, `div8bit.v`, `sub8bit.v`, `adder8bit.v`, `adder4bit.v`, `adder2bit.v`, `tb.v`. `fulladder.v` and `halfadder.v` are only used by those.
 
 ## Simulation
 
-With Icarus Verilog and a testbench that instantiates `datapath` (or `top`). Run it from the folder that contains `program.hex`, so `$readmemh` can find it:
+With Icarus Verilog and a testbench that instantiates `datapath` (or `top`). Run it from the folder that contains `program0.hex` … `program3.hex`, so `$readmemh` can find them:
 
 ```
 cd src
 iverilog -g2005 -o sim top.v datapath.v pc.v instructions.v controlunit.v registerfile.v alu.v \
-    adder32bit.v adder8bit.v adder4bit.v adder2bit.v fulladder.v halfadder.v sub32bit.v \
+    adder32bit.v sub32bit.v \
     mul32bit.v div32bit.v lsu.v datamemory.v mux.v ../testbench.v
 vvp sim
 ```
