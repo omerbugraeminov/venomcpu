@@ -1,6 +1,6 @@
 # Venom32-V
 
-Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M extension (multiply/divide) on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
+Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M (multiply/divide) and Zicsr (control and status registers) extensions on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
 
 ![Venom32-V core](docs/core.svg)
 
@@ -11,7 +11,7 @@ Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It imple
 
 ## Overview
 
-- **ISA:** RV32IM. All RV32I computational, load/store, branch and jump instructions, plus all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU). FENCE, ECALL, EBREAK and the CSR instructions are not implemented.
+- **ISA:** RV32IM_Zicsr. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU) and the six CSR instructions (Zicsr) with cycle and instruction counters. See [Extensions](#extensions) for what is done and what is not.
 - 32 general-purpose 32-bit registers (x0–x31), x0 is always 0
 - 6-stage pipeline (Fetch, Decode, Execute, Memory, Load Align, Write-back) with forwarding, load-use stall and branch flush
 - Branches and jumps are resolved in Execute by a dedicated comparator (taken branches cost 2 cycles)
@@ -83,7 +83,7 @@ Only two files are specific to the Tang Nano 20K: `src/top.v` and `src/venom.cst
 
 ## Writing programs
 
-Programs are standard RV32IM machine code. `src/program.hex` holds one 32-bit word per line, in hexadecimal. Line 0 is address `0x000`, line 1 is address `0x004`, and so on. The CPU starts executing at address 0 after reset. The same file also gives the initial contents of the data part of the RAM, since code and data share one memory.
+Programs are standard RV32IM_Zicsr machine code (`-march=rv32im_zicsr` for GCC or Clang). `src/program.hex` holds one 32-bit word per line, in hexadecimal. Line 0 is address `0x000`, line 1 is address `0x004`, and so on. The CPU starts executing at address 0 after reset. The same file also gives the initial contents of the data part of the RAM, since code and data share one memory.
 
 ```
 00000093    // 0x000: addi x1, x0, 0
@@ -169,7 +169,24 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 | Branches | BEQ, BNE, BLT, BGE, BLTU, BGEU | target = PC + imm |
 | Jumps | JAL, JALR | write PC + 4 to `rd`, JALR clears bit 0 of the target |
 | Upper immediate | LUI, AUIPC | AUIPC adds the immediate to its own PC |
-| Not implemented | FENCE, ECALL, EBREAK, CSR* | |
+| CSR (Zicsr) | CSRRW, CSRRS, CSRRC, CSRRWI, CSRRSI, CSRRCI | done in Execute, see [CSRs](#csrs-and-performance-counters) |
+| Not implemented | FENCE, ECALL, EBREAK, MRET | ECALL/EBREAK/MRET currently do nothing (treated as NOP) |
+
+## Extensions
+
+RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32-V is **RV32IM_Zicsr**.
+
+| Extension | What it adds | Status |
+|-----------|--------------|:------:|
+| **I** | Base integer instructions (32-bit) | ✅ |
+| **M** | Multiply and divide | ✅ |
+| **Zicsr** | Control and status registers (CSR instructions) | ✅ |
+| Machine-mode traps | ECALL, EBREAK, MRET, `mtvec` / `mepc` / `mcause` | ⬜ next |
+| Interrupts | `mstatus`, `mie` / `mip`, timer interrupt | ⬜ planned |
+| **Zifencei** | FENCE.I (instruction-fetch fence) | ⬜ |
+| **A** | Atomic instructions (for multicore) | ⬜ |
+| **C** | 16-bit compressed instructions | ⬜ |
+| **F** / **D** | Single / double precision floating point | ⬜ |
 
 ## Architecture
 
@@ -278,6 +295,29 @@ RISC-V addresses are byte addresses, while the RAM stores 32-bit words. The LSU 
 
 Inside, the RAM is four separate 8-bit memories, one per byte lane, made with a `generate` loop. Each lane writes its byte only when its `byen` bit is set, and reads otherwise. Each lane is a plain memory with one write enable, which every FPGA tool maps cleanly onto block RAM. Each lane is initialized from its own file (`program0.hex` … `program3.hex`) with `$readmemh`. Gowin places the whole RAM in 32 of the 46 block RAMs of the GW2AR-18. The rest is free for future hardware.
 
+### CSRs and performance counters
+
+All CSR work happens in `csr.v`, a separate module next to Execute. A CSR instruction reads the old value of the CSR and writes a new one in the same instruction:
+
+| funct3 | Instruction | rd ← | CSR ← |
+|--------|-------------|------|-------|
+| `001` / `101` | CSRRW / CSRRWI | old CSR | rs1 / uimm |
+| `010` / `110` | CSRRS / CSRRSI | old CSR | old CSR \| rs1 / uimm (set bits) |
+| `011` / `111` | CSRRC / CSRRCI | old CSR | old CSR & ~rs1 / uimm (clear bits) |
+
+CSRRS/CSRRC do not write when the rs1 field is 0, so `csrr rd, csr` (= `csrrs rd, csr, x0`) only reads. The CSR address is the low 12 bits of the I-type immediate (`exdata[11:0]`), rs1 comes through forwarding (`exfwdA`), and the 5-bit `uimm` is the rs1 field itself (`exopregA`). The old value replaces the ALU result on its way into `memalu`, so it travels down the pipeline and is forwarded like any other result.
+
+| CSR | Address | |
+|-----|---------|-|
+| `mcycle` / `mcycleh` | `0xB00` / `0xB80` | 64-bit clock cycle counter |
+| `minstret` / `minstreth` | `0xB02` / `0xB82` | 64-bit retired instruction counter |
+| `cycle`, `cycleh`, `instret`, `instreth` | `0xC00`, `0xC80`, `0xC02`, `0xC82` | read-only copies of the counters |
+| `mscratch` | `0x340` | free 32-bit register |
+
+An instruction counts as retired when it leaves Execute (`exvalid && !stall`). `exvalid` marks real instructions, so bubbles and flushed instructions are not counted. For now writes to the counters are ignored, only `mscratch` is writable. Other addresses read as 0.
+
+**Measured performance:** a C program (clang `-O2`: insertion sort of 200 numbers, CRC32, 8×8 matrix multiply) runs 89,338 instructions in 155,256 cycles: **IPC ≈ 0.58**, about **36 MIPS at 63 MHz**. The main losses are the 32-cycle multiplier, the 2-cycle taken-branch penalty and load-use stalls.
+
 ### Timing and size
 
 The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). Moving the RAM into clocked block RAM first dropped it to 53 MHz, because a load's data went from the RAM through the LSU and forwarding into the ALU in one cycle. The Load Align stage split that path and brought it back to 63 MHz. The longest path now is forwarding select → ALU → `memalu`. The 32-bit adder uses the FPGA's fast carry chain (`a + b + cin`). The design uses about 3,100 logic cells (15%) and 32 of 46 block RAMs of the GW2AR-18.
@@ -299,6 +339,7 @@ The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 
 | `src/sub32bit.v` | `sub32bit` | Subtractor (two's complement) |
 | `src/mul32bit.v` | `mul32bit` | Multi-cycle signed/unsigned multiplier |
 | `src/div32bit.v` | `div32bit` | Multi-cycle signed/unsigned divider |
+| `src/csr.v` | `csr` | CSR file: `mcycle`, `minstret`, `mscratch`, CSR read/modify/write |
 | `src/lsu.v` | `lsu` | Load-store unit: byte/halfword selection, sign extension, byte enables |
 | `src/datamemory.v` | `datamemory` | 64 KB dual-port RAM for code and data, 4 byte lanes, clocked reads |
 | `src/mux.v` | `mux` | 4-input write-back mux |
@@ -315,7 +356,7 @@ With Icarus Verilog and a testbench that instantiates `datapath` (or `top`). Run
 cd src
 iverilog -g2005 -o sim top.v datapath.v pc.v instructions.v controlunit.v registerfile.v alu.v \
     adder32bit.v sub32bit.v \
-    mul32bit.v div32bit.v lsu.v datamemory.v mux.v ../testbench.v
+    mul32bit.v div32bit.v csr.v lsu.v datamemory.v mux.v ../testbench.v
 vvp sim
 ```
 
