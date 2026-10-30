@@ -12,7 +12,11 @@ module controlunit(
     input [2:0] funct3,
     input [6:0] funct7,
     output reg [4:0] aluop,
-    output reg csr
+    output reg csr,
+    output ecall,
+    output ebreak,
+    output mret,
+    input [11:0] funct12
     );
     localparam OPR = 7'b0110011;
     localparam OPIMM = 7'b0010011;
@@ -142,5 +146,7 @@ module controlunit(
             default: aluop = ALUADD;
             endcase
         end
-
+    assign ecall = ((OPSYSTEM == opcode)&&(funct3 == 0)&&(funct12==12'h000));
+    assign ebreak = ((OPSYSTEM == opcode)&&(funct3 == 0)&&(funct12==12'h001));
+    assign mret = ((OPSYSTEM == opcode)&&(funct3 == 0)&&(funct12==12'h302));
 endmodule

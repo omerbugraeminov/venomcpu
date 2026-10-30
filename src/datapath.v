@@ -4,6 +4,9 @@ module datapath(
     input start,
     output [7:0] r1
 );
+    reg execall;
+    reg exebreak;
+    reg exmret;
     reg excsr;
     wire csr;
     reg exvalid;
@@ -45,7 +48,10 @@ module datapath(
     wire loadstall;
     wire stall = (runi ? !aludone : ispoly);
     wire [31:0] muxresult;
-    wire flush = ((exbranch &&istkn) || (exjal) || (exjalr));
+    wire [31:0] mtvecout;
+    wire [31:0] mepcout;
+    wire extrap = execall || exebreak;
+    wire flush = ((exbranch &&istkn) || (exjal) || (exjalr) || extrap || exmret);
     wire [31:0] memfwd;
     reg [31:0] idpc;
     reg [31:0] expc;
@@ -94,6 +100,9 @@ module datapath(
     reg exjalr;
     reg exalusrc;
     wire [4:0] aluop;
+    wire ecall;
+    wire ebreak;
+    wire mret;
     controlunit cu(
         .opcode(opcode),
         .regwrite(regwrite),
@@ -108,7 +117,11 @@ module datapath(
         .funct3(funct3),
         .funct7(funct7),
         .aluop(aluop),
-        .csr(csr)
+        .csr(csr),
+        .mret(mret),
+        .ebreak(ebreak),
+        .ecall(ecall),
+        .funct12(instid[31:20])
     );
     wire [31:0] reddataA;
     wire [31:0] reddataB;
@@ -245,6 +258,9 @@ module datapath(
             exf3 <= 0;
             excsr <= 0;
             exvalid <= 0;
+            execall <= 0;
+            exebreak <= 0;
+            exmret <= 0;
         end
         else if (flush) begin
             exwen <= 0;
@@ -257,6 +273,9 @@ module datapath(
             exf3 <= 0;
             excsr <= 0;
             exvalid <= 0;
+            exmret <= 0;
+            exebreak <= 0;
+            execall <=0;
         end
         else if (loadstall) begin
             exwen <= 0;
@@ -268,6 +287,9 @@ module datapath(
             exjalr <= 0;
             excsr <= 0;
             exvalid <= 0;
+            exmret <= 0;
+            exebreak <= 0;
+            execall <=0;
         end     
         else if (!stall) begin
             exA <= fwdA;
@@ -290,6 +312,9 @@ module datapath(
             exf3 <= funct3;
             excsr <= csr;
             exvalid <= !killid;
+            execall <= ecall;
+            exebreak <= ebreak;
+            exmret <= mret;
     end
 end
     wire [31:0] csrdata;
@@ -357,7 +382,9 @@ end
         else
             istkn = 0;
         end
-    assign target = exjalr ? ((exfwdA + exdata)&~32'd1): expc + exdata;
+    assign target = extrap ? mtvecout :
+                    exmret ? mepcout :
+                    exjalr ? ((exfwdA + exdata)&~32'd1): expc + exdata;
     always @(posedge clk) begin
         if(reset)
             wbenable <= 0;
@@ -376,6 +403,11 @@ end
         .rs1val(exfwdA),
         .uimm(exopregA),
         .retire(exvalid && !stall),
-        .rdata(csrdata)
+        .rdata(csrdata),
+        .trap(extrap && !stall),
+        .trappc(expc),
+        .cause(execall ? 32'd11 : 32'd3),
+        .mtvecout(mtvecout),
+        .mepcout(mepcout)
     );
 endmodule

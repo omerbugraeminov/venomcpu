@@ -11,7 +11,7 @@ Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It imple
 
 ## Overview
 
-- **ISA:** RV32IM_Zicsr. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU) and the six CSR instructions (Zicsr) with cycle and instruction counters. See [Extensions](#extensions) for what is done and what is not.
+- **ISA:** RV32IM_Zicsr. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU) the six CSR instructions (Zicsr) with cycle and instruction counters, and machine-mode traps (ECALL, EBREAK, MRET). Passes the official [riscv-tests](#verification-riscv-tests) for RV32I and RV32M. See [Extensions](#extensions) for what is done and what is not.
 - 32 general-purpose 32-bit registers (x0–x31), x0 is always 0
 - 6-stage pipeline (Fetch, Decode, Execute, Memory, Load Align, Write-back) with forwarding, load-use stall and branch flush
 - Branches and jumps are resolved in Execute by a dedicated comparator (taken branches cost 2 cycles)
@@ -170,20 +170,22 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 | Jumps | JAL, JALR | write PC + 4 to `rd`, JALR clears bit 0 of the target |
 | Upper immediate | LUI, AUIPC | AUIPC adds the immediate to its own PC |
 | CSR (Zicsr) | CSRRW, CSRRS, CSRRC, CSRRWI, CSRRSI, CSRRCI | done in Execute, see [CSRs](#csrs-and-performance-counters) |
-| Not implemented | FENCE, ECALL, EBREAK, MRET | ECALL/EBREAK/MRET currently do nothing (treated as NOP) |
+| System | ECALL, EBREAK, MRET | machine-mode traps, see [Traps](#traps) |
+| Fences | FENCE, FENCE.I | executed as NOP (in-order core, one unified memory) |
 
 ## Extensions
 
-RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32-V is **RV32IM_Zicsr**.
+RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32-V is **RV32IM_Zicsr_Zifencei**.
 
 | Extension | What it adds | Status |
 |-----------|--------------|:------:|
 | **I** | Base integer instructions (32-bit) | ✅ |
 | **M** | Multiply and divide | ✅ |
 | **Zicsr** | Control and status registers (CSR instructions) | ✅ |
-| Machine-mode traps | ECALL, EBREAK, MRET, `mtvec` / `mepc` / `mcause` | ⬜ next |
+| Machine-mode traps | ECALL, EBREAK, MRET, `mtvec` / `mepc` / `mcause` | ✅ |
 | Interrupts | `mstatus`, `mie` / `mip`, timer interrupt | ⬜ planned |
-| **Zifencei** | FENCE.I (instruction-fetch fence) | ⬜ |
+| **Zifencei** | FENCE.I (instruction-fetch fence) | ✅ (NOP, the `fence_i` test passes) |
+| Misaligned access | Loads/stores to addresses that are not a multiple of their size | ⬜ (the only riscv-tests failure, `ma_data`) |
 | **A** | Atomic instructions (for multicore) | ⬜ |
 | **C** | 16-bit compressed instructions | ⬜ |
 | **F** / **D** | Single / double precision floating point | ⬜ |
@@ -313,10 +315,43 @@ CSRRS/CSRRC do not write when the rs1 field is 0, so `csrr rd, csr` (= `csrrs rd
 | `minstret` / `minstreth` | `0xB02` / `0xB82` | 64-bit retired instruction counter |
 | `cycle`, `cycleh`, `instret`, `instreth` | `0xC00`, `0xC80`, `0xC02`, `0xC82` | read-only copies of the counters |
 | `mscratch` | `0x340` | free 32-bit register |
+| `mtvec` | `0x305` | trap handler address (direct mode, low 2 bits always 0) |
+| `mepc` | `0x341` | address of the instruction that trapped (low 2 bits always 0) |
+| `mcause` | `0x342` | why the trap happened (11 = ECALL, 3 = EBREAK) |
 
-An instruction counts as retired when it leaves Execute (`exvalid && !stall`). `exvalid` marks real instructions, so bubbles and flushed instructions are not counted. For now writes to the counters are ignored, only `mscratch` is writable. Other addresses read as 0.
+An instruction counts as retired when it leaves Execute (`exvalid && !stall`). `exvalid` marks real instructions, so bubbles and flushed instructions are not counted. For now writes to the counters are ignored. `mscratch`, `mtvec`, `mepc` and `mcause` are writable. Other addresses read as 0.
 
 **Measured performance:** a C program (clang `-O2`: insertion sort of 200 numbers, CRC32, 8×8 matrix multiply) runs 89,338 instructions in 155,256 cycles: **IPC ≈ 0.58**, about **36 MIPS at 63 MHz**. The main losses are the 32-cycle multiplier, the 2-cycle taken-branch penalty and load-use stalls.
+
+### Traps
+
+ECALL, EBREAK and MRET are decoded in `controlunit.v` (opcode SYSTEM, funct3 = 0, told apart by bits [31:20]: `0x000`, `0x001`, `0x302`) and travel to Execute like other control signals (`execall`, `exebreak`, `exmret`). In Execute they work like a jump:
+
+- **ECALL / EBREAK** (`extrap`): `csr.v` saves the instruction's own PC in `mepc` and the cause in `mcause` (11 or 3), and the PC jumps to `mtvec`.
+- **MRET**: the PC jumps to `mepc`.
+
+Both reuse the branch machinery: they are added to `flush` (the two younger instructions are killed) and to the `target` mux. `mepc` points at the ECALL itself, so a handler that wants to continue after it adds 4 to `mepc` before MRET:
+
+```
+handler:
+    csrr t0, mepc
+    addi t0, t0, 4
+    csrw mepc, t0
+    mret
+```
+
+There is only machine mode and no interrupts yet, so MRET simply jumps back. `mstatus` and the other privilege CSRs read as 0 and ignore writes.
+
+### Verification (riscv-tests)
+
+Venom32-V runs the official [riscv-tests](https://github.com/riscv-software-src/riscv-tests) unchanged, with the standard `p` environment of [riscv-test-env](https://github.com/riscv/riscv-test-env): each test sets up `mtvec`, starts with MRET, and reports its result with ECALL to a trap handler that writes it to `tohost`. They are linked at address 0, loaded through `program0.hex` … `program3.hex` and simulated with Icarus Verilog on the real source files.
+
+| Suite | Result |
+|-------|--------|
+| rv32ui (base integer, incl. `fence_i`) | 39 / 40 ✅ |
+| rv32um (multiply/divide) | 8 / 8 ✅ |
+
+The only failure is `ma_data`, which tests misaligned loads and stores (for example `lw` from address `0x1001`). RISC-V allows a core to leave these out, and Venom32-V does not support them yet.
 
 ### Timing and size
 
@@ -332,14 +367,14 @@ The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 
 | `src/datapath.v` | `datapath` | CPU core: connects all components, pipeline registers, forwarding, hazard detection, branch comparator and flush |
 | `src/pc.v` | `pcounter` | Program counter (reset, stall, jump, PC + 4) |
 | `src/instructions.v` | `instructions` | Splits the instruction into fields and builds the immediate |
-| `src/controlunit.v` | `controlunit` | Decodes opcode/funct3/funct7 into control signals and the ALU operation |
+| `src/controlunit.v` | `controlunit` | Decodes opcode/funct3/funct7 into control signals and the ALU operation, detects ECALL/EBREAK/MRET |
 | `src/registerfile.v` | `regfile` | 32 × 32-bit register file, x0 reads as 0 |
 | `src/alu.v` | `alu` | 18 operations, `done` and `ispoly` (multi-cycle) flags |
 | `src/adder32bit.v` | `adder32bit` | 32-bit adder (`a + b + cin`, maps to the carry chain) |
 | `src/sub32bit.v` | `sub32bit` | Subtractor (two's complement) |
 | `src/mul32bit.v` | `mul32bit` | Multi-cycle signed/unsigned multiplier |
 | `src/div32bit.v` | `div32bit` | Multi-cycle signed/unsigned divider |
-| `src/csr.v` | `csr` | CSR file: `mcycle`, `minstret`, `mscratch`, CSR read/modify/write |
+| `src/csr.v` | `csr` | CSR file: counters, `mscratch`, `mtvec`, `mepc`, `mcause`, CSR read/modify/write, trap writes |
 | `src/lsu.v` | `lsu` | Load-store unit: byte/halfword selection, sign extension, byte enables |
 | `src/datamemory.v` | `datamemory` | 64 KB dual-port RAM for code and data, 4 byte lanes, clocked reads |
 | `src/mux.v` | `mux` | 4-input write-back mux |
