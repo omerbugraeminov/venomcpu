@@ -93,6 +93,26 @@ module controlunit(
                         default: aluop = ALUADD;    
                     endcase
                 end
+                else if(funct7 == 7'b0010100) begin
+                    if(funct3 == 3'b001)
+                        aluop = ALUBSET;
+                    else
+                        aluop = ALUADD;
+                end
+                else if(funct7 == 7'b0100100) begin
+                    if(funct3 == 3'b001)
+                        aluop=ALUBCLR;
+                    else if(funct3 == 3'b101)
+                        aluop=ALUBEXT;
+                    else
+                        aluop = ALUADD;
+                end
+                else if(funct7 == 7'b0110100) begin
+                    if(funct3 == 3'b001)
+                        aluop = ALUBINV;
+                    else
+                        aluop = ALUADD;
+                end
                 else if(funct7 ==7'b0010000) begin
                     case(funct3)
                         3'b010: aluop = ALUSH1ADD;
@@ -118,11 +138,26 @@ module controlunit(
             OPIMM: begin
                 case(funct3)
                     3'b000: aluop = ALUADD;
-                    3'b001: aluop = ALUSLL;
+                    3'b001: begin
+                        case(funct7)
+                            7'b0000000: aluop = ALUSLL;
+                            7'b0010100: aluop = ALUBSET;
+                            7'b0100100: aluop = ALUBCLR;
+                            7'b0110100: aluop = ALUBINV;
+                            default:    aluop = ALUSLL;
+                        endcase
+                    end
                     3'b010: aluop = ALUSLT;
                     3'b011: aluop = ALUSLTU;
                     3'b100: aluop = ALUXOR;
-                    3'b101: aluop = (funct7 == 7'b0100000) ? ALUSRA : ALUSRL;
+                    3'b101: begin
+                        case(funct7)
+                            7'b0000000: aluop = ALUSRL;
+                            7'b0100000: aluop = ALUSRA;
+                            7'b0100100: aluop = ALUBEXT;
+                            default:    aluop = ALUSRL;
+                        endcase
+                    end
                     3'b110: aluop = ALUOR;
                     3'b111: aluop = ALUAND;
                     default: aluop = ALUAND;

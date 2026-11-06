@@ -141,6 +141,22 @@ module alu(
     result = (a << 3) + b;
     done = 1;
     end
+    ALUBSET: begin
+    result = a | (1<< b[4:0]);
+    done = 1;
+    end
+    ALUBCLR: begin
+    result = a & ~(1 << b[4:0]);
+    done = 1;
+    end
+    ALUBINV: begin
+    result = a ^(1 << b[4:0]);
+    done = 1;
+    end
+    ALUBEXT: begin
+    result = (a >> b[4:0]) &1;
+    done = 1;
+    end
     default: begin
     result = 32'd0;
     done = 1'b1;

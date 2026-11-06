@@ -19,3 +19,7 @@
     localparam ALUSH1ADD = 6'd18;
     localparam ALUSH2ADD = 6'd19;
     localparam ALUSH3ADD = 6'd20;
+    localparam ALUBSET = 6'd21;
+    localparam ALUBCLR = 6'd22;
+    localparam ALUBINV = 6'd23;
+    localparam ALUBEXT = 6'd24;
