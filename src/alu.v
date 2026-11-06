@@ -157,6 +157,38 @@ module alu(
     result = (a >> b[4:0]) &1;
     done = 1;
     end
+    ALUANDN: begin
+    result = a & (~b);
+    done = 1;
+    end
+    ALUORN: begin
+    result = a|~b;
+    done = 1;
+    end
+    ALUXNOR: begin
+    result = ~(a^b);
+    done = 1;
+    end
+    ALUMIN: begin
+    result = ($signed(a)<$signed(b)) ? a:b;
+    done = 1;
+    end
+    ALUMINU: begin
+    result = (a<b) ? a:b;
+    done = 1;
+    end
+    ALUMAX: begin
+    result = ($signed(a)>$signed(b)) ? a:b;
+    done = 1;
+    end
+    ALUMAXU: begin
+    result = (a>b) ? a:b;
+    done = 1;
+    end
+    ALUZEXTH: begin
+    result = {16'd0, a[15:0]};
+    done = 1;
+    end
     default: begin
     result = 32'd0;
     done = 1'b1;

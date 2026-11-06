@@ -121,16 +121,31 @@ module controlunit(
                         default: aluop = ALUADD;
                     endcase
                 end
+                else if(funct7 == 7'b0000101) begin
+                    case(funct3)
+                        3'b100: aluop = ALUMIN;
+                        3'b101: aluop = ALUMINU;
+                        3'b110: aluop = ALUMAX;
+                        3'b111: aluop = ALUMAXU;
+                        default: aluop = ALUADD;
+                    endcase
+                end
+                else if(funct7 == 7'b0000100) begin
+                    if(funct3 == 3'b100)
+                        aluop = ALUZEXTH;
+                    else
+                        aluop = ALUADD;
+                end
                 else begin
                     case(funct3)
                         3'b000: aluop = (funct7 == 7'b0100000) ? ALUSUB : ALUADD;
                         3'b001: aluop = ALUSLL;
                         3'b010: aluop = ALUSLT;
                         3'b011: aluop = ALUSLTU;
-                        3'b100: aluop = ALUXOR;
+                        3'b100: aluop = (funct7 == 7'b0100000) ? ALUXNOR : ALUXOR;
                         3'b101: aluop = (funct7 == 7'b0100000) ? ALUSRA : ALUSRL;
-                        3'b110: aluop = ALUOR;
-                        3'b111: aluop = ALUAND;
+                        3'b110: aluop = (funct7 == 7'b0100000) ? ALUORN : ALUOR;
+                        3'b111: aluop = (funct7 == 7'b0100000) ? ALUANDN : ALUAND;
                         default: aluop = ALUADD;    
                     endcase
                 end

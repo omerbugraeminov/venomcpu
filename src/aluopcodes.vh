@@ -23,3 +23,11 @@
     localparam ALUBCLR = 6'd22;
     localparam ALUBINV = 6'd23;
     localparam ALUBEXT = 6'd24;
+    localparam ALUANDN = 6'd25;
+    localparam ALUORN  = 6'd26;
+    localparam ALUXNOR = 6'd27;
+    localparam ALUMIN  = 6'd28;
+    localparam ALUMINU = 6'd29;
+    localparam ALUMAX  = 6'd30;
+    localparam ALUMAXU = 6'd31;
+    localparam ALUZEXTH= 6'd32;
