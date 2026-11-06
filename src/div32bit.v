@@ -7,10 +7,9 @@ module div32bit(
     output [31:0] quotient,
     output [31:0] remainder,
     output reg done,
-    input [4:0] aluop
+    input [5:0] aluop
     );
-    localparam ALUDIV = 5'd14;
-    localparam ALUREM = 5'd16;
+    `include "aluopcodes.vh"
     reg [31:0] ra;
     reg [31:0] rb;
     reg [31:0] rem;

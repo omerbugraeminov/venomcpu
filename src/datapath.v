@@ -24,7 +24,7 @@ module datapath(
     reg laenable;
     reg [31:0] exA;
     reg [31:0] exB;
-    reg [4:0] exop;
+    reg [5:0] exop;
     reg [31:0] exdata;
     reg [4:0] exout;
     reg exwen;
@@ -99,7 +99,7 @@ module datapath(
     reg exauipc;
     reg exjalr;
     reg exalusrc;
-    wire [4:0] aluop;
+    wire [5:0] aluop;
     wire ecall;
     wire ebreak;
     wire mret;

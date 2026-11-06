@@ -348,7 +348,7 @@ Venom32-V runs the official [riscv-tests](https://github.com/riscv-software-src/
 
 | Suite | Result |
 |-------|--------|
-| rv32ui (base integer, incl. `fence_i`) | 39 / 40 ✅ |
+| rv32ui (base integer, incl. `fence_i`) | 41 / 42 ✅ |
 | rv32um (multiply/divide) | 8 / 8 ✅ |
 
 The only failure is `ma_data`, which tests misaligned loads and stores (for example `lw` from address `0x1001`). RISC-V allows a core to leave these out, and Venom32-V does not support them yet.

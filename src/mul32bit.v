@@ -4,12 +4,11 @@ module mul32bit(
     input clk,
     input reset,
     input start,
-    input [4:0] aluop,
+    input [5:0] aluop,
     output [63:0] result,
     output reg done
     );
-    localparam ALUMULH = 5'd11;
-    localparam ALUMULHSU = 5'd12;
+    `include "aluopcodes.vh"
     reg signa;
     reg signb;
     reg [63:0] ra;

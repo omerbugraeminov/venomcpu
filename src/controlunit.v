@@ -11,7 +11,7 @@ module controlunit(
     output reg [1:0] wbsel,
     input [2:0] funct3,
     input [6:0] funct7,
-    output reg [4:0] aluop,
+    output reg [5:0] aluop,
     output reg csr,
     output ecall,
     output ebreak,
@@ -28,24 +28,7 @@ module controlunit(
     localparam OPLUI = 7'b0110111;
     localparam OPAUIPC = 7'b0010111;
     localparam OPSYSTEM = 7'b1110011;
-    localparam ALUADD = 5'd0;
-    localparam ALUSUB = 5'd1;
-    localparam ALUSLL = 5'd2;
-    localparam ALUSRL =5'd3;
-    localparam ALUSRA = 5'd4;
-    localparam ALUSLT = 5'd5;
-    localparam ALUSLTU = 5'd6;
-    localparam ALUXOR = 5'd7;
-    localparam ALUOR = 5'd8;
-    localparam ALUAND = 5'd9;
-    localparam ALUMUL = 5'd10;
-    localparam ALUMULH = 5'd11;
-    localparam ALUMULHSU = 5'd12;
-    localparam ALUMULHU = 5'd13;
-    localparam ALUDIV = 5'd14;
-    localparam ALUDIVU = 5'd15;
-    localparam ALUREM = 5'd16;
-    localparam ALUREMU = 5'd17;
+    `include "aluopcodes.vh"
     always @(*) begin
         case (opcode)
             OPR: begin 
@@ -108,6 +91,14 @@ module controlunit(
                         3'b110: aluop = ALUREM;
                         3'b111: aluop = ALUREMU;
                         default: aluop = ALUADD;    
+                    endcase
+                end
+                else if(funct7 ==7'b0010000) begin
+                    case(funct3)
+                        3'b010: aluop = ALUSH1ADD;
+                        3'b100: aluop = ALUSH2ADD;  
+                        3'b110: aluop = ALUSH3ADD;
+                        default: aluop = ALUADD;
                     endcase
                 end
                 else begin

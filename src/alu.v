@@ -1,7 +1,7 @@
 module alu(
     input [31:0] a,
     input [31:0] b,
-    input [4:0] op,
+    input [5:0] op,
     input clk,
     input reset,
     input start,
@@ -9,24 +9,7 @@ module alu(
     output reg ispoly,
     output reg [31:0] result
     );
-    localparam ALUADD = 5'd0;
-    localparam ALUSUB = 5'd1;
-    localparam ALUSLL = 5'd2;
-    localparam ALUSRL =5'd3;
-    localparam ALUSRA = 5'd4;
-    localparam ALUSLT = 5'd5;
-    localparam ALUSLTU = 5'd6;
-    localparam ALUXOR = 5'd7;
-    localparam ALUOR = 5'd8;
-    localparam ALUAND = 5'd9;
-    localparam ALUMUL = 5'd10;
-    localparam ALUMULH = 5'd11;
-    localparam ALUMULHSU = 5'd12;
-    localparam ALUMULHU = 5'd13;
-    localparam ALUDIV = 5'd14;
-    localparam ALUDIVU = 5'd15;
-    localparam ALUREM = 5'd16;
-    localparam ALUREMU = 5'd17;
+    `include "aluopcodes.vh"
     wire addcout;
     wire [31:0] addresult;
     adder32bit adder(
@@ -145,6 +128,18 @@ module alu(
     ALUDIVU: begin
     result = quotient;
     done = divdone;
+    end
+    ALUSH1ADD: begin
+    result = (a << 1) + b;
+    done = 1;
+    end
+    ALUSH2ADD: begin    
+    result = (a << 2)+ b;
+    done = 1;
+    end
+    ALUSH3ADD: begin
+    result = (a << 3) + b;
+    done = 1;
     end
     default: begin
     result = 32'd0;
