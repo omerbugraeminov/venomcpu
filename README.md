@@ -1,6 +1,6 @@
 # Venom32-V
 
-Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M (multiply/divide) and Zicsr (control and status registers) extensions on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
+Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M (multiply/divide), B (bit manipulation) and Zicsr (control and status registers) extensions on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
 
 ![Venom32-V core](docs/core.svg)
 
@@ -11,7 +11,7 @@ Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It imple
 
 ## Overview
 
-- **ISA:** RV32IM_Zicsr. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU) the six CSR instructions (Zicsr) with cycle and instruction counters, and machine-mode traps (ECALL, EBREAK, MRET). Passes the official [riscv-tests](#verification-riscv-tests) for RV32I and RV32M. See [Extensions](#extensions) for what is done and what is not.
+- **ISA:** RV32IMB_Zicsr_Zifencei. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU), all 29 B-extension instructions (Zba, Zbb, Zbs), the six CSR instructions (Zicsr) with cycle and instruction counters, and machine-mode traps (ECALL, EBREAK, MRET). Passes the official [riscv-tests](#verification-riscv-tests) for RV32I, RV32M and the three B sub-extensions. See [Extensions](#extensions) for what is done and what is not.
 - 32 general-purpose 32-bit registers (x0–x31), x0 is always 0
 - 6-stage pipeline (Fetch, Decode, Execute, Memory, Load Align, Write-back) with forwarding, load-use stall and branch flush
 - Branches and jumps are resolved in Execute by a dedicated comparator (taken branches cost 2 cycles)
@@ -83,7 +83,7 @@ Only two files are specific to the Tang Nano 20K: `src/top.v` and `src/venom.cst
 
 ## Writing programs
 
-Programs are standard RV32IM_Zicsr machine code (`-march=rv32im_zicsr` for GCC or Clang). `src/program.hex` holds one 32-bit word per line, in hexadecimal. Line 0 is address `0x000`, line 1 is address `0x004`, and so on. The CPU starts executing at address 0 after reset. The same file also gives the initial contents of the data part of the RAM, since code and data share one memory.
+Programs are standard RV32IMB_Zicsr machine code (`-march=rv32im_zba_zbb_zbs_zicsr` for GCC or Clang; plain `-march=rv32im` code runs too). `src/program.hex` holds one 32-bit word per line, in hexadecimal. Line 0 is address `0x000`, line 1 is address `0x004`, and so on. The CPU starts executing at address 0 after reset. The same file also gives the initial contents of the data part of the RAM, since code and data share one memory.
 
 ```
 00000093    // 0x000: addi x1, x0, 0
@@ -109,7 +109,7 @@ Things to keep in mind:
 ### Assembling with the GNU toolchain
 
 ```
-riscv64-unknown-elf-as -march=rv32im -mabi=ilp32 -o prog.o prog.s
+riscv64-unknown-elf-as -march=rv32im_zba_zbb_zbs_zicsr -mabi=ilp32 -o prog.o prog.s
 riscv64-unknown-elf-objcopy -O binary prog.o prog.bin
 python3 -c "import sys,struct; d=open('prog.bin','rb').read(); d+=bytes(-len(d)%4); [print('%08x'%w) for (w,) in struct.iter_unpack('<I',d)]" > src/program.hex
 ```
@@ -169,18 +169,22 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 | Branches | BEQ, BNE, BLT, BGE, BLTU, BGEU | target = PC + imm |
 | Jumps | JAL, JALR | write PC + 4 to `rd`, JALR clears bit 0 of the target |
 | Upper immediate | LUI, AUIPC | AUIPC adds the immediate to its own PC |
+| Address generation (Zba) | SH1ADD, SH2ADD, SH3ADD | `rd = (rs1 << n) + rs2`, array indexing in one instruction |
+| Basic bit manipulation (Zbb) | ANDN, ORN, XNOR, MIN, MINU, MAX, MAXU, ROL, ROR, RORI, REV8, ORC.B, SEXT.B, SEXT.H, ZEXT.H, CLZ, CTZ, CPOP | single-cycle in the ALU; CLZ/CTZ/CPOP are combinational `for` loops |
+| Single-bit (Zbs) | BSET, BCLR, BINV, BEXT and the immediate forms BSETI, BCLRI, BINVI, BEXTI | bit number = low 5 bits of `rs2` or the immediate |
 | CSR (Zicsr) | CSRRW, CSRRS, CSRRC, CSRRWI, CSRRSI, CSRRCI | done in Execute, see [CSRs](#csrs-and-performance-counters) |
 | System | ECALL, EBREAK, MRET | machine-mode traps, see [Traps](#traps) |
 | Fences | FENCE, FENCE.I | executed as NOP (in-order core, one unified memory) |
 
 ## Extensions
 
-RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32-V is **RV32IM_Zicsr_Zifencei**.
+RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32-V is **RV32IMB_Zicsr_Zifencei**.
 
 | Extension | What it adds | Status |
 |-----------|--------------|:------:|
 | **I** | Base integer instructions (32-bit) | ✅ |
 | **M** | Multiply and divide | ✅ |
+| **B** = **Zba** + **Zbb** + **Zbs** | Bit manipulation: address generation, basic bit operations, single-bit operations | ✅ |
 | **Zicsr** | Control and status registers (CSR instructions) | ✅ |
 | Machine-mode traps | ECALL, EBREAK, MRET, `mtvec` / `mepc` / `mcause` | ✅ |
 | Interrupts | `mstatus`, `mie` / `mip`, timer interrupt | ⬜ planned |
@@ -214,7 +218,9 @@ Each instruction goes through six stages, and six instructions are in flight at 
 
 ### Control unit
 
-`controlunit.v` decodes the 7-bit opcode into the control signals (`regwrite`, `alusrc`, `memread`, `memwrite`, `branch`, `jal`, `jalr`, `auipc`, `wbsel`) and, from `opcode`, `funct3` and `funct7`, the 5-bit ALU operation `aluop` (18 operations). For immediate instructions `funct7` is only checked for SRAI/SRLI, because in all other I-type instructions those bits belong to the immediate.
+`controlunit.v` decodes the 7-bit opcode into the control signals (`regwrite`, `alusrc`, `memread`, `memwrite`, `branch`, `jal`, `jalr`, `auipc`, `wbsel`) and, from `opcode`, `funct3` and `funct7`, the 6-bit ALU operation `aluop` (43 operations). The operation numbers are defined once in `src/aluopcodes.vh` and pulled into `controlunit.v`, `alu.v`, `mul32bit.v` and `div32bit.v` with `` `include ``, so the decoder and the ALU can never disagree.
+
+For register instructions the decoder looks at `funct7` first (it names the group: base, M, Zba, the Zbs groups, MIN/MAX, rotates, ZEXT.H) and then at `funct3`. For immediate instructions it looks at `funct3` first and checks `funct7` only for `001` and `101` (shifts, Zbs immediates, RORI, REV8, ORC.B), because in all other I-type instructions those bits belong to the immediate. The one-operand Zbb instructions (CLZ, CTZ, CPOP, SEXT.B, SEXT.H) share one `funct7` and are told apart by the whole upper 12 bits (`funct12`).
 
 The ALU's second operand is either `rs2` or the immediate (`alusrc`). Its first operand is `rs1`, or the instruction's own PC for AUIPC.
 
@@ -344,14 +350,19 @@ There is only machine mode and no interrupts yet, so MRET simply jumps back. `ms
 
 ### Verification (riscv-tests)
 
-Venom32-V runs the official [riscv-tests](https://github.com/riscv-software-src/riscv-tests) unchanged, with the standard `p` environment of [riscv-test-env](https://github.com/riscv/riscv-test-env): each test sets up `mtvec`, starts with MRET, and reports its result with ECALL to a trap handler that writes it to `tohost`. They are linked at address 0, loaded through `program0.hex` … `program3.hex` and simulated with Icarus Verilog on the real source files.
+Venom32-V runs the official [riscv-tests](https://github.com/riscv-software-src/riscv-tests), with the standard `p` environment of [riscv-test-env](https://github.com/riscv/riscv-test-env): each test sets up `mtvec`, starts with MRET, and reports its result with ECALL to a trap handler that writes it to `tohost`. They are linked at address 0, loaded through `program0.hex` … `program3.hex` and simulated with Icarus Verilog on the real source files.
 
 | Suite | Result |
 |-------|--------|
 | rv32ui (base integer, incl. `fence_i`) | 41 / 42 ✅ |
 | rv32um (multiply/divide) | 8 / 8 ✅ |
+| rv32uzba (address generation) | 3 / 3 ✅ |
+| rv32uzbb (basic bit manipulation) | 18 / 18 ✅ |
+| rv32uzbs (single-bit) | 8 / 8 ✅ |
 
 The only failure is `ma_data`, which tests misaligned loads and stores (for example `lw` from address `0x1001`). RISC-V allows a core to leave these out, and Venom32-V does not support them yet.
+
+The rv32 `zext_h`, `sext_b` and `sext_h` tests reuse 64-bit test values. GNU as silently cuts them to 32 bits, Clang refuses them; a three-line change to `test_macros.h` (masking the inputs with `MASK_XLEN`, as the other macros already do) makes them build with Clang too.
 
 ### Timing and size
 
@@ -369,7 +380,8 @@ The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 
 | `src/instructions.v` | `instructions` | Splits the instruction into fields and builds the immediate |
 | `src/controlunit.v` | `controlunit` | Decodes opcode/funct3/funct7 into control signals and the ALU operation, detects ECALL/EBREAK/MRET |
 | `src/registerfile.v` | `regfile` | 32 × 32-bit register file, x0 reads as 0 |
-| `src/alu.v` | `alu` | 18 operations, `done` and `ispoly` (multi-cycle) flags |
+| `src/alu.v` | `alu` | 43 operations (RV32I, M, B), `done` and `ispoly` (multi-cycle) flags |
+| `src/aluopcodes.vh` | | ALU operation numbers (6-bit), included by the control unit, ALU, multiplier and divider |
 | `src/adder32bit.v` | `adder32bit` | 32-bit adder (`a + b + cin`, maps to the carry chain) |
 | `src/sub32bit.v` | `sub32bit` | Subtractor (two's complement) |
 | `src/mul32bit.v` | `mul32bit` | Multi-cycle signed/unsigned multiplier |
@@ -385,7 +397,7 @@ Left over from the 8-bit versions and not used by Venom32-V: `instructionmemory.
 
 ## Simulation
 
-With Icarus Verilog and a testbench that instantiates `datapath` (or `top`). Run it from the folder that contains `program0.hex` … `program3.hex`, so `$readmemh` can find them:
+With Icarus Verilog and a testbench that instantiates `datapath` (or `top`). Run it from the `src` folder, so `$readmemh` finds `program0.hex` … `program3.hex` and `` `include `` finds `aluopcodes.vh`:
 
 ```
 cd src

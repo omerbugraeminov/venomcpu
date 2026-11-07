@@ -33,7 +33,7 @@
 
   <rect x="0" y="0" width="1620" height="770" fill="#ffffff"/>
   <text x="30" y="36" style="font-size:20px;font-weight:700;fill:#1b1e28">Venom32-V</text>
-  <text x="30" y="56" class="l" style="font-size:12px">32-bit RISC-V (RV32IM_Zicsr) · 6-stage pipeline (IF / ID / EX / MEM / LA / WB) · forwarding · multi-cycle MUL/DIV · 64 KB clocked RAM</text>
+  <text x="30" y="56" class="l" style="font-size:12px">32-bit RISC-V (RV32IMB_Zicsr) · 6-stage pipeline (IF / ID / EX / MEM / LA / WB) · forwarding · multi-cycle MUL/DIV · 64 KB clocked RAM</text>
 
   <!-- legend -->
   <line x1="1220" y1="30" x2="1256" y2="30" class="w" marker-end="url(#a)"/>

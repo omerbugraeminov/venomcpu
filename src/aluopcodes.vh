@@ -31,3 +31,13 @@
     localparam ALUMAX  = 6'd30;
     localparam ALUMAXU = 6'd31;
     localparam ALUZEXTH= 6'd32;
+    localparam ALUROL  = 6'd33;
+    localparam ALUROR  = 6'd34;
+    localparam ALURORI = 6'd35;
+    localparam ALUREV8 = 6'd36;
+    localparam ALUORCB  = 6'd37;
+    localparam ALUSEXTH= 6'd38;
+    localparam ALUSEXTB= 6'd39;
+    localparam ALUCLZ  = 6'd40;
+    localparam ALUCTZ  = 6'd41;
+    localparam ALUCPOP = 6'd42;

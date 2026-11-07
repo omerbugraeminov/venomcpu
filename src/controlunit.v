@@ -136,6 +136,14 @@ module controlunit(
                     else
                         aluop = ALUADD;
                 end
+                else if(funct7 == 7'b0110000) begin
+                    if(funct3 == 3'b001) 
+                        aluop = ALUROL;
+                    else if(funct3 == 3'b101)
+                        aluop = ALUROR;
+                    else
+                        aluop = ALUADD;
+                end
                 else begin
                     case(funct3)
                         3'b000: aluop = (funct7 == 7'b0100000) ? ALUSUB : ALUADD;
@@ -159,6 +167,16 @@ module controlunit(
                             7'b0010100: aluop = ALUBSET;
                             7'b0100100: aluop = ALUBCLR;
                             7'b0110100: aluop = ALUBINV;
+                            7'b0110000: begin
+                                case(funct12)
+                                    12'h604: aluop = ALUSEXTB;
+                                    12'h605: aluop = ALUSEXTH;
+                                    12'h600: aluop = ALUCLZ;
+                                    12'h601: aluop = ALUCTZ;
+                                    12'h602: aluop = ALUCPOP;
+                                    default: aluop = ALUADD;
+                                endcase
+                            end
                             default:    aluop = ALUSLL;
                         endcase
                     end
@@ -170,6 +188,9 @@ module controlunit(
                             7'b0000000: aluop = ALUSRL;
                             7'b0100000: aluop = ALUSRA;
                             7'b0100100: aluop = ALUBEXT;
+                            7'b0110000: aluop = ALURORI;
+                            7'b0010100: aluop = ALUORCB;
+                            7'b0110100: aluop = ALUREV8;    
                             default:    aluop = ALUSRL;
                         endcase
                     end

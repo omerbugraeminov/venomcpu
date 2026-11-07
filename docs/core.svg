@@ -261,13 +261,13 @@
 <text x="800.0" y="731.0" class="tag" text-anchor="middle">SHARED MEMORY</text>
 <text x="800.0" y="755.0" class="bn" text-anchor="middle">Unified RAM</text>
 <text x="800.0" y="775.0" class="bs" text-anchor="middle">64 KB · 4 byte lanes · dual-port · code + data · 32 block RAMs</text>
-<text x="1378" y="836" text-anchor="end" style="font-size:10px;fill:#fff;fill-opacity:0.18;letter-spacing:2px">VENOM32-V · RV32IM_ZICSR · 2026</text>
+<text x="1378" y="836" text-anchor="end" style="font-size:10px;fill:#fff;fill-opacity:0.18;letter-spacing:2px">VENOM32-V · RV32IMB_ZICSR · 2026</text>
 <text x="222" y="836" style="font-size:10px;fill:#fff;fill-opacity:0.18;letter-spacing:2px">TANG NANO 20K · GW2AR-18</text>
 <line x1="200" y1="892" x2="1400" y2="892" stroke="#fff" stroke-opacity="0.1"/>
 <text x="350" y="950" class="stat">6</text><text x="350" y="980" class="statl">pipeline stages</text>
 <text x="650" y="950" class="stat">32-bit</text><text x="650" y="980" class="statl">datapath · 32 registers</text>
 <line x1="500" y1="910" x2="500" y2="980" stroke="#fff" stroke-opacity="0.08"/>
-<text x="950" y="950" class="stat">RV32IM</text><text x="950" y="980" class="statl">+ Zicsr · RISC-V instruction set</text>
+<text x="950" y="950" class="stat">RV32IMB</text><text x="950" y="980" class="statl">+ Zicsr · RISC-V instruction set</text>
 <line x1="800" y1="910" x2="800" y2="980" stroke="#fff" stroke-opacity="0.08"/>
 <text x="1250" y="950" class="stat">63 MHz</text><text x="1250" y="980" class="statl">Fmax on Tang Nano 20K</text>
 <line x1="1100" y1="910" x2="1100" y2="980" stroke="#fff" stroke-opacity="0.08"/>
