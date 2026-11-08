@@ -16,7 +16,10 @@ module controlunit(
     output ecall,
     output ebreak,
     output mret,
-    input [11:0] funct12
+    input [11:0] funct12,
+    output reg lr,
+    output reg sc,
+    output reg amo
     );
     localparam OPR = 7'b0110011;
     localparam OPIMM = 7'b0010011;
@@ -28,52 +31,64 @@ module controlunit(
     localparam OPLUI = 7'b0110111;
     localparam OPAUIPC = 7'b0010111;
     localparam OPSYSTEM = 7'b1110011;
+    localparam OPAMO = 7'b0101111;
     `include "aluopcodes.vh"
     always @(*) begin
+        lr = 0; sc = 0; amo = 0;
         case (opcode)
             OPR: begin 
                 auipc = 0; regwrite = 1; alusrc = 0; memread = 0; branch = 0;
-                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0; 
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0; amo = 0;
             end
             OPIMM: begin
                 auipc = 0; regwrite = 1; alusrc = 1; memread = 0; branch = 0;
-                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0; amo = 0;
             end
             OPLOAD: begin 
                 auipc = 0; regwrite = 1; alusrc = 1; memread = 1; branch = 0;
-                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b01; csr = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b01; csr = 0; amo = 0;
             end
             OPSTORE: begin
                 auipc = 0; regwrite = 0; alusrc = 1; memread = 0; branch = 0;
-                memwrite = 1; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0;
+                memwrite = 1; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0; amo = 0;
             end
             OPBRANCH: begin
                 auipc = 0; regwrite = 0; alusrc = 0; memread = 0; branch = 1;
-                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0; amo = 0;
             end
             OPLUI: begin
                 auipc = 0; regwrite = 1; alusrc = 0; memread = 0; branch = 0;
-                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b10; csr = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b10; csr = 0; amo = 0;
             end
             OPJAL: begin
                 auipc = 0; regwrite = 1; alusrc = 0; memread = 0; branch = 0;
-                memwrite = 0; jal = 1; jalr = 0; wbsel = 2'b11; csr = 0;
+                memwrite = 0; jal = 1; jalr = 0; wbsel = 2'b11; csr = 0; amo = 0;
             end
             OPJALR: begin   
                 auipc = 0; regwrite = 1; alusrc = 1; memread = 0; branch = 0;
-                memwrite = 0; jal = 0; jalr = 1; wbsel = 2'b11; csr = 0;
+                memwrite = 0; jal = 0; jalr = 1; wbsel = 2'b11; csr = 0; amo = 0;
             end
             OPAUIPC: begin
                 auipc = 1; regwrite = 1; alusrc = 1; memread = 0;branch = 0;
-                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0; amo = 0;
             end
             OPSYSTEM: begin
                 auipc = 0; regwrite = (funct3 != 3'b000); alusrc = 0; memread = 0; branch = 0;
-                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = (funct3 != 3'b000);
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = (funct3 != 3'b000); amo = 0;
+            end
+            OPAMO: begin
+                auipc = 0; alusrc = 1; branch = 0; jal = 0; jalr = 0; csr = 0; 
+                if (funct7[6:2] == 5'b00010) begin
+                    regwrite = 1; memread = 1; memwrite = 0; wbsel = 2'b01; lr = 1; 
+                end else if (funct7[6:2] == 5'b00011) begin
+                    regwrite = 1; memread = 0; memwrite = 1; wbsel = 2'b00; sc = 1;
+                end else begin
+                    regwrite = 1; memread = 1; memwrite = 0; wbsel = 2'b01; amo = 1;
+                end
             end
             default: begin
                 auipc = 0; regwrite = 0; alusrc = 0; memread = 0; branch = 0;
-                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0;
+                memwrite = 0; jal = 0; jalr = 0; wbsel = 2'b00; csr = 0; amo = 0;
             end
     endcase
     end

@@ -4,6 +4,21 @@ module datapath(
     input start,
     output [7:0] r1
 );
+    reg [31:0] amoresult;
+    reg amophase;
+    wire amostall;
+    wire amo;
+    reg examo;
+    reg [4:0] exf5;
+    reg memamo;
+    assign amostall = memamo && !amophase;
+    reg [4:0] memf5;
+    wire lr;
+    wire sc;
+    reg exlr;
+    reg exsc;
+    reg memlr;
+    reg memsc;
     reg execall;
     reg exebreak;
     reg exmret;
@@ -46,18 +61,22 @@ module datapath(
     wire [31:0] pc;
     wire polystart = ispoly&&!runi;
     wire loadstall;
-    wire stall = (runi ? !aludone : ispoly);
+    wire stall = (runi ? !aludone : ispoly) || amostall;
     wire [31:0] muxresult;
     wire [31:0] mtvecout;
     wire [31:0] mepcout;
     wire extrap = execall || exebreak;
-    wire flush = ((exbranch &&istkn) || (exjal) || (exjalr) || extrap || exmret);
+    wire flush = ((exbranch &&istkn) || (exjal) || (exjalr) || extrap || exmret) && !amostall;
     wire [31:0] memfwd;
+    reg resvalid;
+    reg [31:0] resaddr;
+    wire scok = memsc && resvalid && (resaddr == memalu);
     reg [31:0] idpc;
     reg [31:0] expc;
     reg [31:0] mempc4;
     reg [2:0] memf3;
-    assign memfwd = (memwbsel == 2'b10) ? memdata :
+    assign memfwd = memsc ? {31'd0, !scok} :
+                    (memwbsel == 2'b10) ? memdata :
                     (memwbsel == 2'b11) ? mempc4 : memalu;
     pcounter pcmodule(
         .address(target),
@@ -74,6 +93,8 @@ module datapath(
     wire [4:0] outreg;
     wire [2:0] funct3;
     wire [6:0] funct7;
+    wire [4:0] funct5;
+    assign funct5 = funct7[6:2];
     instructions inst(
         .inst(instid),
         .opcode(opcode),
@@ -121,7 +142,10 @@ module datapath(
         .mret(mret),
         .ebreak(ebreak),
         .ecall(ecall),
-        .funct12(instid[31:20])
+        .funct12(instid[31:20]),
+        .lr(lr),
+        .sc(sc),
+        .amo(amo)
     );
     wire [31:0] reddataA;
     wire [31:0] reddataB;
@@ -173,8 +197,8 @@ module datapath(
     lsu lsu(
         .clk(clk),
         .address(memalu),
-        .wrtenable(memstore),
-        .wrtdata(memA),
+        .wrtenable((memstore && (!memsc || scok)) || (memamo && amophase)),
+        .wrtdata(memamo ? amoresult : memA),
         .funct3(memf3),
         .loaddata(loaddata),
         .addressB(pc),
@@ -191,6 +215,36 @@ module datapath(
     .muxrslt(muxresult),
     .d(mempc4)
     );
+    always @(*) begin
+        case(memf5)
+            5'b00000: amoresult = loaddata + memA;
+            5'b00001: amoresult = memA;
+            5'b00100: amoresult = loaddata^memA;
+            5'b01100: amoresult = loaddata&memA;
+            5'b01000: amoresult = loaddata|memA;
+            5'b10000: amoresult = ($signed(loaddata) < $signed (memA)) ? loaddata: memA;
+            5'b10100: amoresult = ($signed(loaddata) < $signed(memA)) ? memA : loaddata;
+            5'b11000: amoresult = (loaddata < memA) ? loaddata : memA;
+            5'b11100: amoresult = (loaddata < memA) ? memA : loaddata;
+            default: amoresult = memA;
+        endcase
+    end
+    always @(posedge clk) begin
+        if (reset)
+            resvalid <= 0;
+        else if (memlr) begin
+            resvalid <= 1;
+            resaddr <= memalu;
+        end
+        else if (memsc)
+            resvalid <= 0;
+    end
+    always @(posedge clk) begin
+        if(reset) 
+            amophase <= 0;
+        else 
+            amophase <= amostall;
+    end
     reg runi;
     always @(posedge clk) begin
         if (reset)
@@ -226,7 +280,7 @@ module datapath(
 
     end
     always @(posedge clk) begin
-        ladata <= muxresult;
+        ladata <= memsc ? {31'd0, !scok} : muxresult;
         lareg <= memout;
         laoff <= memalu[1:0];
         laf3 <= memf3;
@@ -234,7 +288,7 @@ module datapath(
         if (reset)
         laenable <= 0;
         else 
-        laenable <= memwen;
+        laenable <= memwen && !amostall;
     end
     always @(posedge clk) begin
         if (reset) begin
@@ -245,6 +299,8 @@ module datapath(
             exout <= 0;
             exwen <= 0;
             exload <= 0;
+            exlr <= 0;
+            exsc <= 0;
             exstore <= 0;
             exopregA <= 0;
             exopregB <= 0;
@@ -261,6 +317,8 @@ module datapath(
             execall <= 0;
             exebreak <= 0;
             exmret <= 0;
+            examo <= 0;
+            exf5 <= 0;
         end
         else if (flush) begin
             exwen <= 0;
@@ -270,16 +328,22 @@ module datapath(
             exauipc <= 0;
             exjalr <= 0;
             exload <= 0;
+            exlr <= 0;
+            exsc <= 0;
             exf3 <= 0;
             excsr <= 0;
             exvalid <= 0;
             exmret <= 0;
             exebreak <= 0;
             execall <=0;
+            examo <= 0;
+            exf5 <= 0;
         end
-        else if (loadstall) begin
+        else if (loadstall && !stall) begin
             exwen <= 0;
             exload <= 0;
+            exlr <= 0;
+            exsc <= 0;
             exstore <= 0;
             exbranch <= 0;
             exjal <= 0;
@@ -290,6 +354,8 @@ module datapath(
             exmret <= 0;
             exebreak <= 0;
             execall <=0;
+            examo <= 0;
+            exf5 <= 0;
         end     
         else if (!stall) begin
             exA <= fwdA;
@@ -299,6 +365,8 @@ module datapath(
             exout <= outreg;
             exwen <= regwrite;
             exload <= memread;
+            exlr <= lr;
+            exsc <= sc;
             exstore <= memwrite;
             exwbsel <= wbsel;
             exbranch <= branch;
@@ -315,25 +383,39 @@ module datapath(
             execall <= ecall;
             exebreak <= ebreak;
             exmret <= mret;
-    end
+            exf5 <= funct5;
+            examo <= amo;
+        end
+        else begin
+            exA <= exfwdA;
+            exB <= exfwdB;
+        end
 end
     wire [31:0] csrdata;
     always @(posedge clk) begin
         if (reset) begin
             memwen <= 0;
             memstore <= 0;
+            memlr <= 0;
+            memsc <= 0;
             mempc4 <= 0;
             memf3 <= 0;
-        end else begin
+            memamo <= 0;
+            memf5 <= 0;
+        end else if (!amostall) begin
             memalu <= excsr ? csrdata : aluresult;
             memdata <= exdata;
             memA <= exfwdB;
             memout <= exout;
             memwen <= exwen && !stall;
             memstore <= exstore && !stall;
+            memlr <= exlr && !stall;
+            memsc <= exsc && !stall;
             memwbsel <= exwbsel;
             mempc4 <= expc + 4;
             memf3 <= exf3;
+            memf5 <= exf5;
+            memamo <= examo && !stall;
         end
     end
     localparam BEQ = 3'b000;
