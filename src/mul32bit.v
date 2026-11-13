@@ -11,18 +11,11 @@ module mul32bit(
     `include "aluopcodes.vh"
     reg signa;
     reg signb;
-    reg [63:0] ra;
-    reg [31:0] rb;
-    reg [5:0] count;
-    wire nega;
-    wire negb;
-    wire [31:0] abva;
-    wire [31:0] abvb;
-    assign nega = signa&&a[31];
-    assign negb = signb&&b[31];
-    assign abva = nega ? -a: a;
-    assign abvb = negb ? -b: b;
-    reg negres;
+    wire signed [32:0] aext;
+    wire signed [32:0] bext;
+    reg signed [32:0] ra, rb;
+    assign aext = {signa & a[31], a};
+    assign bext = {signb & b[31], b};
     reg [63:0] prod;
     always @(*) begin
         if(aluop == ALUMULH) begin
@@ -39,28 +32,20 @@ module mul32bit(
 
     always @(posedge clk) begin
         if (reset) begin
-            count <= 0;
             prod <= 0;
             done <= 0;
         end
         else if (start) begin
-            ra <= abva;
-            rb <= abvb;
-            negres <= nega ^ negb;
+            ra <= aext;
+            rb <= bext;
             done <= 0;
             prod <= 0;
-            count <= 0;
         end 
-        else if (count < 32) begin 
-            if (rb[0] == 1'b1)
-                prod  <= prod + (ra << count);
-            count <= count + 1;
-            rb <= rb >> 1;
-        end
         else begin
-        done <= 1;
+            prod <= ra*rb;
+            done <= 1;
         end
     end
-    assign result = negres ? -prod : prod;
+    assign result = prod;
 endmodule
 
