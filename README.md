@@ -1,6 +1,6 @@
 # Venom32-V
 
-Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M (multiply/divide), B (bit manipulation) and Zicsr (control and status registers) extensions on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
+Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M (multiply/divide), A (atomics), B (bit manipulation) and Zicsr (control and status registers) extensions on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
 
 ![Venom32-V core](docs/core.svg)
 
@@ -11,15 +11,16 @@ Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It imple
 
 ## Overview
 
-- **ISA:** RV32IMB_Zicsr_Zifencei. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU), all 29 B-extension instructions (Zba, Zbb, Zbs), the six CSR instructions (Zicsr) with cycle and instruction counters, and machine-mode traps (ECALL, EBREAK, MRET). Passes the official [riscv-tests](#verification-riscv-tests) for RV32I, RV32M and the three B sub-extensions. See [Extensions](#extensions) for what is done and what is not.
+- **ISA:** RV32IMAB_Zicsr_Zifencei. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU), all 11 A-extension instructions (LR.W, SC.W and the nine AMOs), all 29 B-extension instructions (Zba, Zbb, Zbs), the six CSR instructions (Zicsr) with cycle and instruction counters, and machine-mode traps (ECALL, EBREAK, MRET). Passes the official [riscv-tests](#verification-riscv-tests) for RV32I, RV32M, RV32A and the three B sub-extensions. See [Extensions](#extensions) for what is done and what is not.
 - 32 general-purpose 32-bit registers (x0–x31), x0 is always 0
 - 6-stage pipeline (Fetch, Decode, Execute, Memory, Load Align, Write-back) with forwarding, load-use stall and branch flush
 - Branches and jumps are resolved in Execute by a dedicated comparator (taken branches cost 2 cycles)
 - Multi-cycle multiplier and divider (signed and unsigned), which stall the pipeline until they finish
+- Atomic instructions: LR/SC with a reservation register, and AMOs that read, compute and write back in two cycles in the Memory stage
 - Unified memory (von Neumann): one dual-port RAM of 64 KB holds both code and data. Port B fetches instructions, port A serves loads and stores. Reads are clocked, so the RAM maps onto the FPGA's block RAM
 - Byte, halfword and word loads and stores (LB, LH, LW, LBU, LHU, SB, SH, SW) through a load-store unit
 - The program is loaded into RAM with `$readmemh` from four hex files, one per byte lane (`src/program0.hex` … `program3.hex`), made from `src/program.hex`
-- **On the Tang Nano 20K:** Fmax of about **63 MHz** (Gowin timing report), about 3,100 logic cells (15% of the chip), and the RAM uses 32 of the 46 block RAMs (BSRAM)
+- **On the Tang Nano 20K:** Fmax of about **63 MHz** (Gowin timing report), about 5,500 logic cells (27% of the chip), and the RAM uses 32 of the 46 block RAMs (BSRAM)
 - The low 8 bits of x1 are exposed as an output, and the board wrapper shows them on the LEDs
 
 ## Getting started
@@ -83,7 +84,7 @@ Only two files are specific to the Tang Nano 20K: `src/top.v` and `src/venom.cst
 
 ## Writing programs
 
-Programs are standard RV32IMB_Zicsr machine code (`-march=rv32im_zba_zbb_zbs_zicsr` for GCC or Clang; plain `-march=rv32im` code runs too). `src/program.hex` holds one 32-bit word per line, in hexadecimal. Line 0 is address `0x000`, line 1 is address `0x004`, and so on. The CPU starts executing at address 0 after reset. The same file also gives the initial contents of the data part of the RAM, since code and data share one memory.
+Programs are standard RV32IMAB_Zicsr machine code (`-march=rv32ima_zba_zbb_zbs_zicsr` for GCC or Clang; plain `-march=rv32im` code runs too). `src/program.hex` holds one 32-bit word per line, in hexadecimal. Line 0 is address `0x000`, line 1 is address `0x004`, and so on. The CPU starts executing at address 0 after reset. The same file also gives the initial contents of the data part of the RAM, since code and data share one memory.
 
 ```
 00000093    // 0x000: addi x1, x0, 0
@@ -109,7 +110,7 @@ Things to keep in mind:
 ### Assembling with the GNU toolchain
 
 ```
-riscv64-unknown-elf-as -march=rv32im_zba_zbb_zbs_zicsr -mabi=ilp32 -o prog.o prog.s
+riscv64-unknown-elf-as -march=rv32ima_zba_zbb_zbs_zicsr -mabi=ilp32 -o prog.o prog.s
 riscv64-unknown-elf-objcopy -O binary prog.o prog.bin
 python3 -c "import sys,struct; d=open('prog.bin','rb').read(); d+=bytes(-len(d)%4); [print('%08x'%w) for (w,) in struct.iter_unpack('<I',d)]" > src/program.hex
 ```
@@ -165,6 +166,7 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 | Register-immediate | ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI | I-type |
 | Multiply/divide (M) | MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU | multi-cycle, division by 0 follows the RISC-V rules |
 | Loads | LB, LH, LW, LBU, LHU | through the load-store unit |
+| Atomics (A) | LR.W, SC.W, AMOSWAP.W, AMOADD.W, AMOXOR.W, AMOAND.W, AMOOR.W, AMOMIN.W, AMOMAX.W, AMOMINU.W, AMOMAXU.W | see [Atomics](#atomics-a); `aq`/`rl` bits are ignored (single in-order core) |
 | Stores | SB, SH, SW | byte enables, only the selected bytes are written |
 | Branches | BEQ, BNE, BLT, BGE, BLTU, BGEU | target = PC + imm |
 | Jumps | JAL, JALR | write PC + 4 to `rd`, JALR clears bit 0 of the target |
@@ -178,19 +180,19 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 
 ## Extensions
 
-RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32-V is **RV32IMB_Zicsr_Zifencei**.
+RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32-V is **RV32IMAB_Zicsr_Zifencei**.
 
 | Extension | What it adds | Status |
 |-----------|--------------|:------:|
 | **I** | Base integer instructions (32-bit) | ✅ |
 | **M** | Multiply and divide | ✅ |
+| **A** = **Zalrsc** + **Zaamo** | Atomic instructions: load-reserved / store-conditional and atomic memory operations | ✅ |
 | **B** = **Zba** + **Zbb** + **Zbs** | Bit manipulation: address generation, basic bit operations, single-bit operations | ✅ |
 | **Zicsr** | Control and status registers (CSR instructions) | ✅ |
 | Machine-mode traps | ECALL, EBREAK, MRET, `mtvec` / `mepc` / `mcause` | ✅ |
 | Interrupts | `mstatus`, `mie` / `mip`, timer interrupt | ⬜ planned |
 | **Zifencei** | FENCE.I (instruction-fetch fence) | ✅ (NOP, the `fence_i` test passes) |
 | Misaligned access | Loads/stores to addresses that are not a multiple of their size | ⬜ (the only riscv-tests failure, `ma_data`) |
-| **A** | Atomic instructions (for multicore) | ⬜ |
 | **C** | 16-bit compressed instructions | ⬜ |
 | **F** / **D** | Single / double precision floating point | ⬜ |
 
@@ -259,7 +261,8 @@ An instruction may need a register that an earlier instruction has not written y
 // Decode: an older instruction is being written back right now
 assign fwdA   = (wbenable && (wbreg == opregA) && (wbreg != 0)) ? wbdata : reddataA;
 // Execute: the three older instructions are in Memory, Load Align and Write-back
-assign memfwd = (memwbsel == 2'b10) ? memdata :
+assign memfwd = memsc ? {31'd0, !scok} :            // SC result (0 = success)
+                (memwbsel == 2'b10) ? memdata :
                 (memwbsel == 2'b11) ? mempc4  : memalu;
 assign exfwdA = (memwen && (memout == exopregA) && (memout != 0)) ? memfwd :
                 ((laenable && (lareg == exopregA) && (lareg != 0) && !laload) ? ladata :
@@ -288,6 +291,30 @@ When a MUL or DIV instruction reaches Execute:
 1. A one-cycle `start` pulse is sent to the ALU and the `runi` flag is set.
 2. The `stall` signal holds the PC, Decode and the `ex` registers, and sends bubbles into Memory.
 3. When the ALU raises `done`, the result moves on, `runi` is cleared, and the PC advances.
+
+### Atomics (A)
+
+All atomic instructions use the opcode `0101111`. The operation is chosen by `funct5`, the upper five bits of `funct7`; the remaining two bits (`aq`, `rl`) order memory accesses between cores and are ignored on this single in-order core. The address is just `rs1` (the immediate is 0).
+
+**LR/SC (Zalrsc).** `LR.W` is a load that also records a reservation: `resvalid <= 1` and `resaddr <= address`. `SC.W` is a store that only writes if the reservation is still valid for the same address, and writes 0 (success) or 1 (failure) to `rd`. Every SC clears the reservation.
+
+```verilog
+wire scok = memsc && resvalid && (resaddr == memalu);
+// RAM write enable: normal stores, successful SCs, and the write cycle of an AMO
+.wrtenable((memstore && (!memsc || scok)) || (memamo && amophase)),
+```
+
+**AMOs (Zaamo).** An AMO reads a word, combines it with `rs2` and writes the result back, all to one address, and returns the old value in `rd`. Because RAM reads are clocked, the AMO stays in the Memory stage for two cycles:
+
+1. **Read cycle** (`amophase = 0`): the RAM reads the word. `amostall` holds the PC, Decode and Execute, keeps the AMO in Memory and sends a bubble into Load Align.
+2. **Write cycle** (`amophase = 1`): the old word is now on the RAM output (`loaddata`). `amoresult` is computed from it and `rs2` (add, swap, xor, and, or, min, max, minu, maxu) and written back.
+
+```verilog
+wire amostall = memamo && !amophase;
+wire stall    = (runi ? !aludone : ispoly) || amostall;
+```
+
+The control unit marks an AMO like a load (`memread = 1`, write-back from RAM). A RAM lane does not update its read output in a cycle where it writes, so in Load Align the RAM output still holds the old value, and it reaches `rd` through the normal load path. The load-use stall also covers AMOs without any change. While Execute is frozen by a stall, its operands are refreshed from the forwarding network every cycle (`exA <= exfwdA`), so a value that leaves the forwarding window during the stall is not lost.
 
 ### Memory and the load-store unit
 
@@ -356,6 +383,7 @@ Venom32-V runs the official [riscv-tests](https://github.com/riscv-software-src/
 |-------|--------|
 | rv32ui (base integer, incl. `fence_i`) | 41 / 42 ✅ |
 | rv32um (multiply/divide) | 8 / 8 ✅ |
+| rv32ua (atomics: `lrsc` and the nine AMOs) | 10 / 10 ✅ |
 | rv32uzba (address generation) | 3 / 3 ✅ |
 | rv32uzbb (basic bit manipulation) | 18 / 18 ✅ |
 | rv32uzbs (single-bit) | 8 / 8 ✅ |
@@ -366,7 +394,7 @@ The rv32 `zext_h`, `sext_b` and `sext_h` tests reuse 64-bit test values. GNU as 
 
 ### Timing and size
 
-The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). Moving the RAM into clocked block RAM first dropped it to 53 MHz, because a load's data went from the RAM through the LSU and forwarding into the ALU in one cycle. The Load Align stage split that path and brought it back to 63 MHz. The longest path now is forwarding select → ALU → `memalu`. The 32-bit adder uses the FPGA's fast carry chain (`a + b + cin`). The design uses about 3,100 logic cells (15%) and 32 of 46 block RAMs of the GW2AR-18.
+The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). Moving the RAM into clocked block RAM first dropped it to 53 MHz, because a load's data went from the RAM through the LSU and forwarding into the ALU in one cycle. The Load Align stage split that path and brought it back to 63 MHz. The longest path now is forwarding select → ALU → `memalu`. The 32-bit adder uses the FPGA's fast carry chain (`a + b + cin`). The design uses about 5,500 logic cells (27%) and 32 of 46 block RAMs of the GW2AR-18.
 
 ## Source files
 
@@ -375,10 +403,10 @@ The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 
 | `src/top.v` | `top` | Tang Nano 20K wrapper: clock divider (~260 kHz), reset button, LEDs |
 | `src/venom.cst` | | Tang Nano 20K pin assignments |
 | `src/venom.sdc` | | Clock constraint (27 MHz) for the timing report |
-| `src/datapath.v` | `datapath` | CPU core: connects all components, pipeline registers, forwarding, hazard detection, branch comparator and flush |
+| `src/datapath.v` | `datapath` | CPU core: connects all components, pipeline registers, forwarding, hazard detection, branch comparator and flush, LR/SC reservation and the AMO unit |
 | `src/pc.v` | `pcounter` | Program counter (reset, stall, jump, PC + 4) |
 | `src/instructions.v` | `instructions` | Splits the instruction into fields and builds the immediate |
-| `src/controlunit.v` | `controlunit` | Decodes opcode/funct3/funct7 into control signals and the ALU operation, detects ECALL/EBREAK/MRET |
+| `src/controlunit.v` | `controlunit` | Decodes opcode/funct3/funct7 into control signals and the ALU operation, detects ECALL/EBREAK/MRET, LR/SC and AMOs |
 | `src/registerfile.v` | `regfile` | 32 × 32-bit register file, x0 reads as 0 |
 | `src/alu.v` | `alu` | 43 operations (RV32I, M, B), `done` and `ispoly` (multi-cycle) flags |
 | `src/aluopcodes.vh` | | ALU operation numbers (6-bit), included by the control unit, ALU, multiplier and divider |
