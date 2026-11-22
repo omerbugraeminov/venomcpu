@@ -14,13 +14,13 @@ Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It imple
 - **ISA:** RV32IMAB_Zicsr_Zifencei. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU), all 11 A-extension instructions (LR.W, SC.W and the nine AMOs), all 29 B-extension instructions (Zba, Zbb, Zbs), the six CSR instructions (Zicsr) with cycle and instruction counters, and machine-mode traps (ECALL, EBREAK, MRET). Passes the official [riscv-tests](#verification-riscv-tests) for RV32I, RV32M, RV32A and the three B sub-extensions. See [Extensions](#extensions) for what is done and what is not.
 - 32 general-purpose 32-bit registers (x0–x31), x0 is always 0
 - 6-stage pipeline (Fetch, Decode, Execute, Memory, Load Align, Write-back) with forwarding, load-use stall and branch flush
-- Branches and jumps are resolved in Execute by a dedicated comparator (taken branches cost 2 cycles)
-- Multi-cycle multiplier and divider (signed and unsigned), which stall the pipeline until they finish
+- Branch prediction in Fetch: a 16-entry branch target buffer with 2-bit counters predicts branches and JAL, so a correctly predicted jump costs nothing. Branches are checked in Execute by a dedicated comparator, and a misprediction costs 2 cycles
+- Multiplier on the FPGA's DSP block (2 cycles) and a multi-cycle divider, both signed and unsigned; the pipeline stalls until they finish
 - Atomic instructions: LR/SC with a reservation register, and AMOs that read, compute and write back in two cycles in the Memory stage
 - Unified memory (von Neumann): one dual-port RAM of 64 KB holds both code and data. Port B fetches instructions, port A serves loads and stores. Reads are clocked, so the RAM maps onto the FPGA's block RAM
 - Byte, halfword and word loads and stores (LB, LH, LW, LBU, LHU, SB, SH, SW) through a load-store unit
 - The program is loaded into RAM with `$readmemh` from four hex files, one per byte lane (`src/program0.hex` … `program3.hex`), made from `src/program.hex`
-- **On the Tang Nano 20K:** Fmax of about **63 MHz** (Gowin timing report), about 5,500 logic cells (27% of the chip), and the RAM uses 32 of the 46 block RAMs (BSRAM)
+- **On the Tang Nano 20K:** Fmax of about **63 MHz** (Gowin timing report), about 4,900 logic cells (24% of the chip), and the RAM uses 32 of the 46 block RAMs (BSRAM)
 - The low 8 bits of x1 are exposed as an output, and the board wrapper shows them on the LEDs
 
 ## Getting started
@@ -164,7 +164,7 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 |-------|--------------|-------|
 | Register-register | ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND | R-type |
 | Register-immediate | ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI | I-type |
-| Multiply/divide (M) | MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU | multi-cycle, division by 0 follows the RISC-V rules |
+| Multiply/divide (M) | MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU | MUL 2 cycles (DSP), DIV ~32 cycles; division by 0 follows the RISC-V rules |
 | Loads | LB, LH, LW, LBU, LHU | through the load-store unit |
 | Atomics (A) | LR.W, SC.W, AMOSWAP.W, AMOADD.W, AMOXOR.W, AMOAND.W, AMOOR.W, AMOMIN.W, AMOMAX.W, AMOMINU.W, AMOMAXU.W | see [Atomics](#atomics-a); `aq`/`rl` bits are ignored (single in-order core) |
 | Stores | SB, SH, SW | byte enables, only the selected bytes are written |
@@ -247,11 +247,37 @@ Branches are resolved in Execute. A small comparator, separate from the ALU, che
 | `111` | BGEU | rs1 >= rs2 (unsigned) |
 
 ```verilog
-wire flush = (exbranch && istkn) || exjal || exjalr;
-assign target = exjalr ? ((exfwdA + exdata) & ~32'd1) : expc + exdata;
+assign actualtaken = (exbranch && istkn) || exjal;   // what really happened
+assign mispred     = (actualtaken != expred);        // what Fetch guessed
+wire   flush       = (mispred || exjalr || extrap || exmret) && !amostall;
+assign target = extrap ? mtvecout : exmret ? mepcout :
+                exjalr ? ((exfwdA + exdata) & ~32'd1) :
+                actualtaken ? expc + exdata : expc + 4;
 ```
 
-When `flush` is 1, the PC jumps to `target`, `killid` turns the instruction in Decode into a NOP (`addi x0, x0, 0`) and the `ex` control signals are cleared, so the two wrong instructions behind the branch are thrown away. Every taken branch or jump costs two cycles. JAL and JALR write their return address (`mempc4`) through the write-back mux.
+When `flush` is 1, the PC jumps to `target`, `killid` turns the instruction in Decode into a NOP (`addi x0, x0, 0`) and the `ex` control signals are cleared, so the two wrong instructions behind the branch are thrown away. A misprediction costs two cycles; a correct prediction costs nothing. JALR (its target comes from a register) always flushes. JAL and JALR write their return address (`mempc4`) through the write-back mux.
+
+### Branch prediction
+
+`bpu.v` predicts, in Fetch and from the PC alone, whether the instruction being fetched is a taken branch or jump, and where it goes. It is a 16-entry table (branch target buffer):
+
+| Field | Bits | Meaning |
+|-------|------|---------|
+| `valid` | 1 | the entry holds a branch |
+| `tag` | 10 (`pc[15:6]`) | which branch owns the entry (many addresses share one entry) |
+| `target` | 14 (`target[15:2]`) | where the branch jumps |
+| `ctr` | 2 | saturating counter: `00` strongly not taken … `11` strongly taken |
+
+The entry is chosen by `pc[5:2]` (instructions are 4-byte aligned, so `pc[1:0]` is always `00`). A prediction is made when the entry is valid, its tag matches and the counter's top bit is 1; the PC then goes to the stored target instead of PC + 4.
+
+```verilog
+wire hit       = valid[idx] && (tagmem[idx] == pc[15:6]);
+assign predtaken = hit && ctrmem[idx][1];
+```
+
+The prediction travels down the pipeline with its instruction (`idpred` → `expred`, together with the counter value). In Execute the real outcome is compared with it, and the table entry is written: valid, tag, target and the counter moved one step toward taken or not taken (it saturates at `11` and `00`, so one odd outcome in a loop does not flip the prediction). Carrying the counter down the pipeline means the table needs only one read port, so Gowin maps it onto small distributed RAMs. Branches and JAL are predicted; JALR is not.
+
+On CoreMark the predictor is right 86.5% of the time (9,305 mispredictions in 68,744 branches and jumps), which cut the cycle count by 9.3%. It costs about 64 LUTs, 48 registers and 6 SSRAM blocks.
 
 ### Forwarding (data hazards)
 
@@ -282,11 +308,21 @@ assign loadstall = (exload && (exout != 0) && ((exout == opregA) || (exout == op
 
 When `loadstall` is 1, the PC and Decode hold, and a bubble goes into Execute. The instruction right after a load waits 2 cycles, one with an instruction in between waits 1, and with two in between there is no wait.
 
-### Multi-cycle MUL/DIV
+### Multiplier and divider
 
-The multiplier (`mul32bit.v`, shift-and-add) and the divider (`div32bit.v`, restoring long division) take about 32 cycles. The sign logic lives inside the modules: they work on absolute values and negate the result when needed. MULH/MULHSU/MULHU return the upper 32 bits of the 64-bit product. Division by zero returns all ones for the quotient and the dividend for the remainder, and the signed overflow case (−2³¹ / −1) follows the RISC-V rules.
+**Multiplier (`mul32bit.v`).** `a * b` maps onto one of the FPGA's DSP blocks (one MULT36X36). Both operands are extended to 33 bits and multiplied as signed numbers: a signed operand gets its own sign bit on top, an unsigned one gets a 0, so a single signed multiplier serves MUL, MULH, MULHSU and MULHU.
 
-When a MUL or DIV instruction reaches Execute:
+```verilog
+assign aext = {signa & a[31], a};
+assign bext = {signb & b[31], b};
+// cycle 1: ra <= aext; rb <= bext;   cycle 2: prod <= ra * rb; done <= 1;
+```
+
+The operands are registered first and multiplied in the next cycle, so the multiplier does not become the longest path. A multiply takes 2 cycles. MULH/MULHSU/MULHU return the upper 32 bits of the 64-bit product.
+
+**Divider (`div32bit.v`).** Restoring long division, one quotient bit per cycle, about 32 cycles. The sign logic lives inside the module: it works on absolute values and negates the result when needed. Division by zero returns all ones for the quotient and the dividend for the remainder, and the signed overflow case (−2³¹ / −1) follows the RISC-V rules.
+
+When a MUL or DIV instruction reaches Execute (the same mechanism for both):
 
 1. A one-cycle `start` pulse is sent to the ALU and the `runi` flag is set.
 2. The `stall` signal holds the PC, Decode and the `ex` registers, and sends bubbles into Memory.
@@ -354,7 +390,9 @@ CSRRS/CSRRC do not write when the rs1 field is 0, so `csrr rd, csr` (= `csrrs rd
 
 An instruction counts as retired when it leaves Execute (`exvalid && !stall`). `exvalid` marks real instructions, so bubbles and flushed instructions are not counted. For now writes to the counters are ignored. `mscratch`, `mtvec`, `mepc` and `mcause` are writable. Other addresses read as 0.
 
-**Measured performance:** a C program (clang `-O2`: insertion sort of 200 numbers, CRC32, 8×8 matrix multiply) runs 89,338 instructions in 155,256 cycles: **IPC ≈ 0.58**, about **36 MIPS at 63 MHz**. The main losses are the 32-cycle multiplier, the 2-cycle taken-branch penalty and load-use stalls.
+**CoreMark:** **2.04 CoreMark/MHz** (clang `-O2`, `-march=rv32im_zba_zbb_zbs_zicsr`, simulated on the real source files, time measured with `mcycle`; CRCs match the reference). Moving the multiplier onto the DSP block took it from 1.19 to 1.85, and branch prediction to 2.04 — about the same as an ESP32 core per MHz.
+
+**Earlier measurement:** a C program (clang `-O2`: insertion sort of 200 numbers, CRC32, 8×8 matrix multiply) runs 89,338 instructions in 155,256 cycles: **IPC ≈ 0.58**, about **36 MIPS at 63 MHz**. The main losses then were the 32-cycle multiplier, the 2-cycle taken-branch penalty and load-use stalls; the first two have since been fixed.
 
 ### Traps
 
@@ -394,7 +432,7 @@ The rv32 `zext_h`, `sext_b` and `sext_h` tests reuse 64-bit test values. GNU as 
 
 ### Timing and size
 
-The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). Moving the RAM into clocked block RAM first dropped it to 53 MHz, because a load's data went from the RAM through the LSU and forwarding into the ALU in one cycle. The Load Align stage split that path and brought it back to 63 MHz. The longest path now is forwarding select → ALU → `memalu`. The 32-bit adder uses the FPGA's fast carry chain (`a + b + cin`). The design uses about 5,500 logic cells (27%) and 32 of 46 block RAMs of the GW2AR-18.
+The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). Moving the RAM into clocked block RAM first dropped it to 53 MHz, because a load's data went from the RAM through the LSU and forwarding into the ALU in one cycle. The Load Align stage split that path and brought it back to 63 MHz. The longest path now is forwarding select → ALU → `memalu`. The 32-bit adder uses the FPGA's fast carry chain (`a + b + cin`). The design uses about 4,900 logic cells (24%), 32 of 46 block RAMs and one DSP block of the GW2AR-18.
 
 ## Source files
 
@@ -405,6 +443,7 @@ The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 
 | `src/venom.sdc` | | Clock constraint (27 MHz) for the timing report |
 | `src/datapath.v` | `datapath` | CPU core: connects all components, pipeline registers, forwarding, hazard detection, branch comparator and flush, LR/SC reservation and the AMO unit |
 | `src/pc.v` | `pcounter` | Program counter (reset, stall, jump, PC + 4) |
+| `src/bpu.v` | `bpu` | Branch predictor: 16-entry branch target buffer with 2-bit counters |
 | `src/instructions.v` | `instructions` | Splits the instruction into fields and builds the immediate |
 | `src/controlunit.v` | `controlunit` | Decodes opcode/funct3/funct7 into control signals and the ALU operation, detects ECALL/EBREAK/MRET, LR/SC and AMOs |
 | `src/registerfile.v` | `regfile` | 32 × 32-bit register file, x0 reads as 0 |
@@ -412,7 +451,7 @@ The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 
 | `src/aluopcodes.vh` | | ALU operation numbers (6-bit), included by the control unit, ALU, multiplier and divider |
 | `src/adder32bit.v` | `adder32bit` | 32-bit adder (`a + b + cin`, maps to the carry chain) |
 | `src/sub32bit.v` | `sub32bit` | Subtractor (two's complement) |
-| `src/mul32bit.v` | `mul32bit` | Multi-cycle signed/unsigned multiplier |
+| `src/mul32bit.v` | `mul32bit` | 2-cycle signed/unsigned multiplier on a DSP block |
 | `src/div32bit.v` | `div32bit` | Multi-cycle signed/unsigned divider |
 | `src/csr.v` | `csr` | CSR file: counters, `mscratch`, `mtvec`, `mepc`, `mcause`, CSR read/modify/write, trap writes |
 | `src/lsu.v` | `lsu` | Load-store unit: byte/halfword selection, sign extension, byte enables |
@@ -430,7 +469,7 @@ With Icarus Verilog and a testbench that instantiates `datapath` (or `top`). Run
 ```
 cd src
 iverilog -g2005 -o sim top.v datapath.v pc.v instructions.v controlunit.v registerfile.v alu.v \
-    adder32bit.v sub32bit.v \
+    adder32bit.v sub32bit.v bpu.v \
     mul32bit.v div32bit.v csr.v lsu.v datamemory.v mux.v ../testbench.v
 vvp sim
 ```

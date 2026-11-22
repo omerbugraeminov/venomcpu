@@ -4,6 +4,17 @@ module datapath(
     input start,
     output [7:0] r1
 );
+    reg exbranch;
+    reg exjal;
+    wire predtaken;
+    wire [31:0] predtarget;
+    wire [1:0] predctr;
+    reg idpred;
+    reg [1:0] idctr;
+    reg expred;
+    reg [1:0] exctr;
+    wire actualtaken;
+    wire mispred;
     reg [31:0] amoresult;
     reg amophase;
     wire amostall;
@@ -66,7 +77,7 @@ module datapath(
     wire [31:0] mtvecout;
     wire [31:0] mepcout;
     wire extrap = execall || exebreak;
-    wire flush = ((exbranch &&istkn) || (exjal) || (exjalr) || extrap || exmret) && !amostall;
+    wire flush = (mispred ||  exjalr || extrap || exmret) && !amostall;
     wire [31:0] memfwd;
     reg resvalid;
     reg [31:0] resaddr;
@@ -79,12 +90,25 @@ module datapath(
                     (memwbsel == 2'b10) ? memdata :
                     (memwbsel == 2'b11) ? mempc4 : memalu;
     pcounter pcmodule(
-        .address(target),
+        .address(flush ? target : predtarget),
         .pc(pc),
-        .jump(flush),
+        .jump(flush || predtaken),
         .reset(reset),
         .clk(clk),
         .stall(stall || loadstall)
+    );
+    bpu branchpredunit(
+        .clk(clk),
+        .reset(reset),
+        .pc(pc),
+        .predtaken(predtaken),
+        .predtarget(predtarget),
+        .predctr(predctr),
+        .upd((exbranch || exjal) && !stall),
+        .updpc(expc),
+        .updtaken(actualtaken),
+        .updtarget(expc + exdata),
+        .updctr(exctr)
     );
     wire [31:0] outinsmem;
     wire [6:0] opcode;
@@ -115,8 +139,6 @@ module datapath(
     wire auipc;
     wire jalr;
     wire [1:0] wbsel;
-    reg exbranch;
-    reg exjal;
     reg exauipc;
     reg exjalr;
     reg exalusrc;
@@ -264,18 +286,25 @@ module datapath(
         if (reset) begin
             killid <= 1;
             idpc <= 0;
+            idpred <= 0;
+            idctr <= 0;
         end
         else if (stall || loadstall) begin
             killid <= killid;
             idpc <= idpc;
+            idpred <= idpred;
+            idctr <= idctr; 
         end
         else if (flush) begin
             killid <= 1;
             idpc <= 0;
+            idpred <= 0;
         end
         else begin
             killid <= 0;
             idpc <= pc;
+            idpred <= predtaken;
+            idctr <= predctr;
         end
 
     end
@@ -319,6 +348,7 @@ module datapath(
             exmret <= 0;
             examo <= 0;
             exf5 <= 0;
+            expred <= 0;
         end
         else if (flush) begin
             exwen <= 0;
@@ -338,6 +368,7 @@ module datapath(
             execall <=0;
             examo <= 0;
             exf5 <= 0;
+            expred <= 0;
         end
         else if (loadstall && !stall) begin
             exwen <= 0;
@@ -356,6 +387,7 @@ module datapath(
             execall <=0;
             examo <= 0;
             exf5 <= 0;
+            expred <= 0;
         end     
         else if (!stall) begin
             exA <= fwdA;
@@ -385,6 +417,8 @@ module datapath(
             exmret <= mret;
             exf5 <= funct5;
             examo <= amo;
+            expred <= idpred;
+            exctr <= idctr;
         end
         else begin
             exA <= exfwdA;
@@ -464,9 +498,11 @@ end
         else
             istkn = 0;
         end
+    assign actualtaken = (exbranch && istkn) || exjal;
+    assign mispred = (actualtaken != expred);
     assign target = extrap ? mtvecout :
                     exmret ? mepcout :
-                    exjalr ? ((exfwdA + exdata)&~32'd1): expc + exdata;
+                    exjalr ? ((exfwdA + exdata)&~32'd1) : actualtaken ? expc + exdata : expc + 4;
     always @(posedge clk) begin
         if(reset)
             wbenable <= 0;

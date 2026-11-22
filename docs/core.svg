@@ -59,7 +59,7 @@
 <rect x="224" y="270" width="140" height="120" rx="7" fill="url(#hl)"/>
 <rect x="224.5" y="270.5" width="139" height="119" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
 <text x="294.0" y="328.0" class="bn" text-anchor="middle">PC</text>
-<text x="294.0" y="348.0" class="bs" text-anchor="middle">+4 · target</text>
+<text x="294.0" y="348.0" class="bs" text-anchor="middle">+4 · predictor</text>
 <linearGradient id="g2" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#3b82f6" stop-opacity="0.95"/><stop offset="1" stop-color="#1e3a8a" stop-opacity="0.95"/></linearGradient>
 <g><rect x="224" y="402" width="140" height="238" rx="7" fill="url(#g2)"/></g>
 <rect x="224" y="402" width="140" height="238" rx="7" fill="url(#hatch)"/>
@@ -176,7 +176,7 @@
 <rect x="684.5" y="450.5" width="127" height="189" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
 <text x="748.0" y="535.0" class="bn" text-anchor="middle">MUL</text>
 <text x="748.0" y="555.0" class="bs" text-anchor="middle">signed</text>
-<text x="748.0" y="571.0" class="bs" text-anchor="middle">64-bit result</text>
+<text x="748.0" y="571.0" class="bs" text-anchor="middle">DSP · 2 cycles</text>
 <linearGradient id="g9" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fb7185" stop-opacity="0.95"/><stop offset="1" stop-color="#8a1d33" stop-opacity="0.95"/></linearGradient>
 <g><rect x="822" y="450" width="128" height="190" rx="7" fill="url(#g9)"/></g>
 <rect x="822" y="450" width="128" height="190" rx="7" fill="url(#hatch)"/>
@@ -191,7 +191,7 @@
 <rect x="960" y="450" width="96" height="90" rx="7" fill="url(#hl)"/>
 <rect x="960.5" y="450.5" width="95" height="89" rx="7" fill="none" stroke="#fff" stroke-opacity="0.22"/>
 <text x="1008.0" y="493.0" class="bn" text-anchor="middle">Branch</text>
-<text x="1008.0" y="513.0" class="bs" text-anchor="middle">6 conditions</text>
+<text x="1008.0" y="513.0" class="bs" text-anchor="middle">6 cond. · BTB</text>
 <linearGradient id="g11" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#a78bfa" stop-opacity="0.95"/><stop offset="1" stop-color="#5b3cc4" stop-opacity="0.95"/></linearGradient>
 <g><rect x="960" y="552" width="96" height="88" rx="7" fill="url(#g11)"/></g>
 <rect x="960" y="552" width="96" height="88" rx="7" fill="url(#dots)"/>
@@ -271,5 +271,5 @@
 <line x1="800" y1="910" x2="800" y2="980" stroke="#fff" stroke-opacity="0.08"/>
 <text x="1250" y="950" class="stat">63 MHz</text><text x="1250" y="980" class="statl">Fmax on Tang Nano 20K</text>
 <line x1="1100" y1="910" x2="1100" y2="980" stroke="#fff" stroke-opacity="0.08"/>
-<text x="800" y="1040" text-anchor="middle" style="font-size:13px;fill:#6e6e73">~5,500 logic cells (27%) · 32 of 46 BSRAM · clocked RAM · forwarding · load-use stall · branch flush · multi-cycle MUL/DIV · atomics</text>
+<text x="800" y="1040" text-anchor="middle" style="font-size:13px;fill:#6e6e73">~4,900 logic cells (24%) · 32 of 46 BSRAM · clocked RAM · forwarding · load-use stall · branch flush · branch prediction · DSP multiplier · atomics</text>
 </svg>
