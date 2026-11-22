@@ -95,7 +95,7 @@ module datapath(
         .jump(flush || predtaken),
         .reset(reset),
         .clk(clk),
-        .stall(stall || loadstall)
+        .stall(stall || (loadstall&&!flush))
     );
     bpu branchpredunit(
         .clk(clk),
@@ -289,16 +289,16 @@ module datapath(
             idpred <= 0;
             idctr <= 0;
         end
+        else if (flush) begin
+            killid <= 1;
+            idpc <= 0;
+            idpred <= 0;
+        end
         else if (stall || loadstall) begin
             killid <= killid;
             idpc <= idpc;
             idpred <= idpred;
             idctr <= idctr; 
-        end
-        else if (flush) begin
-            killid <= 1;
-            idpc <= 0;
-            idpred <= 0;
         end
         else begin
             killid <= 0;
