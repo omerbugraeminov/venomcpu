@@ -13,6 +13,17 @@ module datapath(
     reg [1:0] idctr;
     reg expred;
     reg [1:0] exctr;
+    reg redir;
+    reg [31:0] redirpc;
+    wire flushnow = (mispred || exjalr || extrap || exmret) && !amostall && !redir;
+    wire flush = redir;
+    always @(posedge clk) begin
+        if(reset)
+            redir <= 0;
+        else
+            redir <= flushnow;
+        redirpc <= target;
+    end
     wire actualtaken;
     wire mispred;
     reg [31:0] amoresult;
@@ -70,14 +81,13 @@ module datapath(
     reg [1:0] memwbsel;
     wire [31:0] data;
     wire [31:0] pc;
-    wire polystart = ispoly&&!runi;
+    wire polystart = ispoly&&!runi&&!flush;
     wire loadstall;
-    wire stall = (runi ? !aludone : ispoly) || amostall;
+    wire stall = (runi ? !aludone : (ispoly&&!flush)) || amostall;
     wire [31:0] muxresult;
     wire [31:0] mtvecout;
     wire [31:0] mepcout;
     wire extrap = execall || exebreak;
-    wire flush = (mispred ||  exjalr || extrap || exmret) && !amostall;
     wire [31:0] memfwd;
     reg resvalid;
     reg [31:0] resaddr;
@@ -90,7 +100,7 @@ module datapath(
                     (memwbsel == 2'b10) ? memdata :
                     (memwbsel == 2'b11) ? mempc4 : memalu;
     pcounter pcmodule(
-        .address(flush ? target : predtarget),
+        .address(flush ? redirpc : predtarget),
         .pc(pc),
         .jump(flush || predtaken),
         .reset(reset),
@@ -104,7 +114,7 @@ module datapath(
         .predtaken(predtaken),
         .predtarget(predtarget),
         .predctr(predctr),
-        .upd((exbranch || exjal) && !stall),
+        .upd((exbranch || exjal) && !stall && !flush),
         .updpc(expc),
         .updtaken(actualtaken),
         .updtarget(expc + exdata),
@@ -369,6 +379,7 @@ module datapath(
             examo <= 0;
             exf5 <= 0;
             expred <= 0;
+            exop <= 0;
         end
         else if (loadstall && !stall) begin
             exwen <= 0;
@@ -441,15 +452,15 @@ end
             memdata <= exdata;
             memA <= exfwdB;
             memout <= exout;
-            memwen <= exwen && !stall;
-            memstore <= exstore && !stall;
-            memlr <= exlr && !stall;
-            memsc <= exsc && !stall;
+            memwen   <= exwen   && !stall && !flush;
+            memstore <= exstore && !stall && !flush;
+            memlr    <= exlr    && !stall && !flush;
+            memsc    <= exsc    && !stall && !flush;
+            memamo   <= examo   && !stall && !flush;
             memwbsel <= exwbsel;
             mempc4 <= expc + 4;
             memf3 <= exf3;
             memf5 <= exf5;
-            memamo <= examo && !stall;
         end
     end
     localparam BEQ = 3'b000;
@@ -515,14 +526,14 @@ end
     csr csrunit(
         .clk(clk),
         .reset(reset),
-        .en(excsr && !stall),
+        .en(excsr && !stall &&!flush),
         .addr(exdata[11:0]),
         .f3(exf3),
         .rs1val(exfwdA),
         .uimm(exopregA),
-        .retire(exvalid && !stall),
+        .retire(exvalid && !stall && !flush),
         .rdata(csrdata),
-        .trap(extrap && !stall),
+        .trap(extrap && !stall && !flush),
         .trappc(expc),
         .cause(execall ? 32'd11 : 32'd3),
         .mtvecout(mtvecout),
