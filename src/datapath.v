@@ -198,12 +198,44 @@ module datapath(
     wire [31:0] exfwdB;
     assign fwdA = (wbenable && (wbreg == opregA)&& (wbreg != 0)) ? wbdata : reddataA;
     assign fwdB = (wbenable && (wbreg == opregB)&& (wbreg != 0)) ? wbdata : reddataB;
-    assign exfwdA = (memwen && (memout == exopregA)&& (memout != 0)) ? memfwd :
-                ((laenable && (lareg == exopregA)&& (lareg != 0)&& !laload) ? ladata :
-                ((wbenable && (wbreg == exopregA) && (wbreg != 0)) ? wbdata : exA));
-    assign exfwdB = (memwen && (memout == exopregB)&& (memout != 0)) ? memfwd :
-                ((laenable && (lareg == exopregB)&& (lareg != 0)&& !laload) ? ladata :
-                ((wbenable && (wbreg == exopregB) && (wbreg != 0)) ? wbdata : exB));
+    reg fwdmemA;
+    reg fwdlaA;
+    reg fwdwbA;
+    reg fwdmemB;
+    reg fwdlaB;
+    reg fwdwbB;
+    wire pipemove;
+    assign pipemove = !stall;
+    wire [4:0] nextexregA;
+    wire [4:0] nextexregB;
+    assign nextexregA = pipemove ? opregA: exopregA;
+    assign nextexregB = pipemove ? opregB: exopregB;
+    wire nextmemwen;
+    wire [4:0] nextmemreg;
+    assign nextmemwen = pipemove ? exwen: (amostall && memwen);
+    assign nextmemreg = pipemove ? exout: memout;
+    wire nextlawen;
+    assign nextlawen = memwen && !amostall && (memwbsel != 2'b01);
+    always @(posedge clk) begin
+        if (reset) begin
+            fwdmemA <= 0;
+            fwdlaA <= 0;
+            fwdwbA <= 0;
+            fwdmemB <= 0;
+            fwdlaB <= 0;
+            fwdwbB <= 0;
+        end
+        else begin
+            fwdmemA <= nextmemwen && (nextmemreg == nextexregA) && (nextexregA != 0);
+            fwdlaA <= nextlawen && (memout == nextexregA) && (nextexregA != 0);
+            fwdwbA <= laenable && (lareg == nextexregA) && (nextexregA != 0);
+            fwdmemB <= nextmemwen && (nextmemreg == nextexregB) && (nextexregB != 0);
+            fwdlaB <= nextlawen && (memout == nextexregB) && (nextexregB != 0);
+            fwdwbB <= laenable && (lareg == nextexregB) && (nextexregB != 0);
+        end
+    end
+    assign exfwdA = fwdmemA ? memfwd: (fwdlaA ? ladata: (fwdwbA ? wbdata: exA));
+    assign exfwdB = fwdmemB ? memfwd: (fwdlaB ? ladata: (fwdwbB ? wbdata: exB));
     assign loadstall = ((exload || exsc) && (exout != 0) && ((exout == opregA) || (exout == opregB))) ||
                    (((memwbsel == 2'b01) || memsc) && memwen && (memout != 0) && ((memout == opregA) || (memout == opregB)));
     wire [31:0] aluresult;

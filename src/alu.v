@@ -10,6 +10,8 @@ module alu(
     output reg [31:0] result
     );
     `include "aluopcodes.vh"
+    wire isslow;
+    assign isslow = (op >= ALUSH1ADD);
     wire addcout;
     wire [31:0] addresult;
     adder32bit adder(
@@ -55,193 +57,115 @@ module alu(
     );
     
     reg [5:0] clzv, ctzv, cpopv;
+    reg [31:0] slowres;
+    reg [31:0] slowprod;
+    reg [31:0] polyres;
+    reg [31:0] fastres;
     integer i, j, k;
     
     always @(*) begin
     
     case(op)
-    ALUADD: begin 
-    result = addresult;
-    done = 1'b1;
-    end
-    ALUSUB: begin
-    result = diff;
-    done = 1'b1;
-    end
-    ALUMUL: begin
-    result = multresult[31:0];
-    done = muldone;
-    end
-    ALUDIV: begin
-    result = quotient;
-    done = divdone;
-    end
-    ALUXOR: begin 
-    result = a^b;
-    done = 1'b1;
-    end
-    ALUAND: begin 
-    result = a&b;
-    done = 1'b1;
-    end
-    ALUOR: begin 
-    result = a|b;
-    done = 1'b1;
-    end
-    ALUSLL: begin
-    result = a << b[4:0];
-    done = 1'b1;
-    end
-    ALUSRL: begin
-    result = a >> b[4:0];
-    done = 1'b1;
-    end
-    ALUSRA: begin
-    result = $signed(a) >>> b[4:0];
-    done = 1'b1;
-    end
-    ALUSLT: begin
-    result = ($signed(a) < $signed(b)) ? 32'd1:32'd0;
-    done = 1'b1;
-    end
-    ALUSLTU: begin
-    result = (a<b) ? 32'd1:32'd0;
-    done = 1'b1;
-    end
-    ALUMULH: begin
-    result = multresult[63:32];
-    done = muldone;
-    end
-    ALUMULHU: begin
-    result = multresult[63:32];
-    done = muldone;
-    end
-    ALUMULHSU: begin
-    result = multresult[63:32];
-    done = muldone;
-    end
-    ALUREM: begin
-    result = divresult;
-    done = divdone;
-    end
-    ALUREMU: begin
-    result = divresult;
-    done = divdone;
-    end
-    ALUDIVU: begin
-    result = quotient;
-    done = divdone;
-    end
-    ALUSH1ADD: begin
-    result = (a << 1) + b;
-    done = 1;
-    end
-    ALUSH2ADD: begin    
-    result = (a << 2)+ b;
-    done = 1;
-    end
-    ALUSH3ADD: begin
-    result = (a << 3) + b;
-    done = 1;
-    end
-    ALUBSET: begin
-    result = a | (1<< b[4:0]);
-    done = 1;
-    end
-    ALUBCLR: begin
-    result = a & ~(1 << b[4:0]);
-    done = 1;
-    end
-    ALUBINV: begin
-    result = a ^(1 << b[4:0]);
-    done = 1;
-    end
-    ALUBEXT: begin
-    result = (a >> b[4:0]) &1;
-    done = 1;
-    end
-    ALUANDN: begin
-    result = a & (~b);
-    done = 1;
-    end
-    ALUORN: begin
-    result = a|~b;
-    done = 1;
-    end
-    ALUXNOR: begin
-    result = ~(a^b);
-    done = 1;
-    end
-    ALUMIN: begin
-    result = ($signed(a)<$signed(b)) ? a:b;
-    done = 1;
-    end
-    ALUMINU: begin
-    result = (a<b) ? a:b;
-    done = 1;
-    end
-    ALUMAX: begin
-    result = ($signed(a)>$signed(b)) ? a:b;
-    done = 1;
-    end
-    ALUMAXU: begin
-    result = (a>b) ? a:b;
-    done = 1;
-    end
-    ALUZEXTH: begin
-    result = {16'd0, a[15:0]};
-    done = 1;
-    end
-    ALUROL: begin
-    result = (a << b[4:0]) | (a>>(32-b[4:0]));
-    done = 1;
-    end
-    ALUROR: begin
-    result = (a >> b[4:0])|  (a<<(32-b[4:0]));
-    done = 1;
-    end
-    ALURORI: begin
-    result = (a >> b[4:0])|  (a<<(32-b[4:0]));
-    done =1;
-    end
-    ALUREV8: begin
-    result = {a[7:0], a[15:8], a[23:16], a[31:24]};
-    done = 1;
-    end
-    ALUORCB: begin
-    result = {{8{|a[31:24]}}, {8{|a[23:16]}}, {8{|a[15:8]}}, {8{|a[7:0]}}};
-    done = 1;
-    end
-    ALUSEXTH: begin
-    result = {{16{a[15]}}, a[15:0]};
-    done = 1;
-    end
-    ALUSEXTB: begin
-    result = {{24{a[7]}}, a[7:0]}; 
-    done = 1;
-    end
-    ALUCLZ: begin
-    result = {26'd0, clzv};
-    done = 1;
-    end
-    ALUCTZ: begin
-    result = {26'd0, ctzv};
-    done = 1;
-    end
-    ALUCPOP: begin
-    result = {26'd0, cpopv};
-    done = 1;
-    end
-    default: begin
-    result = 32'd0;
-    done = 1'b1;
-    end
+    ALUADD:  fastres = addresult;
+    ALUSUB:  fastres = diff;
+    ALUXOR:  fastres = a^b;
+    ALUAND:  fastres = a&b;
+    ALUOR:   fastres = a|b;
+    ALUSLL:  fastres = a << b[4:0];
+    ALUSRL:  fastres = a >> b[4:0];
+    ALUSRA:  fastres = $signed(a) >>> b[4:0];
+    ALUSLT:  fastres = ($signed(a) < $signed(b)) ? 32'd1:32'd0;
+    ALUSLTU: fastres = (a<b) ? 32'd1:32'd0;
+    default: fastres = 32'd0;
     endcase
 
     end
+    always @(*) begin
 
+    slowres = 32'd0;
+    case(op)
+    ALUSH1ADD: begin
+    slowres = (a << 1) + b;
+    end
+    ALUSH2ADD: begin    
+    slowres = (a << 2)+ b;
+    end
+    ALUSH3ADD: begin
+    slowres = (a << 3) + b;
+    end
+    ALUBSET: begin
+    slowres = a | (1<< b[4:0]);
+    end
+    ALUBCLR: begin
+    slowres = a & ~(1 << b[4:0]);
+    end
+    ALUBINV: begin
+    slowres = a ^(1 << b[4:0]);
+    end
+    ALUBEXT: begin
+    slowres = (a >> b[4:0]) &1;
+    end
+    ALUANDN: begin
+    slowres = a & (~b);
+    end
+    ALUORN: begin
+    slowres = a|~b;
+    end
+    ALUXNOR: begin
+    slowres = ~(a^b);
+    end
+    ALUMIN: begin
+    slowres = ($signed(a)<$signed(b)) ? a:b;
+    end
+    ALUMINU: begin
+    slowres = (a<b) ? a:b;
+    end
+    ALUMAX: begin
+    slowres = ($signed(a)>$signed(b)) ? a:b;
+    end
+    ALUMAXU: begin
+    slowres = (a>b) ? a:b;
+    end
+    ALUZEXTH: begin
+    slowres = {16'd0, a[15:0]};
+    end
+    ALUROL: begin
+    slowres = (a << b[4:0]) | (a>>(32-b[4:0]));
+    end
+    ALUROR: begin
+    slowres = (a >> b[4:0])|  (a<<(32-b[4:0]));
+    end
+    ALURORI: begin
+    slowres = (a >> b[4:0])|  (a<<(32-b[4:0]));
+    end
+    ALUREV8: begin
+    slowres = {a[7:0], a[15:8], a[23:16], a[31:24]};
+    end
+    ALUORCB: begin
+    slowres = {{8{|a[31:24]}}, {8{|a[23:16]}}, {8{|a[15:8]}}, {8{|a[7:0]}}};
+    end
+    ALUSEXTH: begin
+    slowres = {{16{a[15]}}, a[15:0]};
+    end
+    ALUSEXTB: begin
+    slowres = {{24{a[7]}}, a[7:0]}; 
+    end
+    ALUCLZ: begin
+    slowres = {26'd0, clzv};
+    end
+    ALUCTZ: begin
+    slowres = {26'd0, ctzv};
+    end
+    ALUCPOP: begin
+    slowres = {26'd0, cpopv};
+    end
+    endcase
+    end
+    always @(posedge clk) begin
+        slowprod <= slowres;
+    end
         always @(*) begin
-        if (op>= ALUMUL && op <= ALUREMU)
+        if (op>= ALUMUL && op <= ALUREMU || isslow)
         ispoly = 1'b1;
         else
         ispoly = 1'b0;
@@ -261,7 +185,28 @@ module alu(
             for(k=31;k>=0;k=k-1)
                 if(a[k]) ctzv = k;
         end
-
+    always @(*) begin
+        case(op)
+            ALUMUL: polyres = multresult[31:0];
+            ALUMULH, ALUMULHU, ALUMULHSU: polyres = multresult[63:32];
+            ALUDIV, ALUDIVU: polyres = quotient;
+            ALUREM, ALUREMU: polyres = divresult;
+            default: polyres = slowprod;
+        endcase
+    end
+    always @(*) begin
+        if(ispoly)
+            result = polyres;
+        else
+            result = fastres;
+    end
+    always @(*) begin
+        case(op)
+            ALUMUL, ALUMULH, ALUMULHU, ALUMULHSU: done = muldone;
+            ALUREM, ALUREMU, ALUDIV, ALUDIVU: done = divdone;
+            default: done = 1;
+        endcase
+    end
 endmodule
     
     

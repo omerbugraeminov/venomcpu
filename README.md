@@ -14,13 +14,14 @@ Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It imple
 - **ISA:** RV32IMAB_Zicsr_Zifencei. All RV32I computational, load/store, branch and jump instructions, all eight M-extension instructions (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU), all 11 A-extension instructions (LR.W, SC.W and the nine AMOs), all 29 B-extension instructions (Zba, Zbb, Zbs), the six CSR instructions (Zicsr) with cycle and instruction counters, and machine-mode traps (ECALL, EBREAK, MRET). Passes the official [riscv-tests](#verification-riscv-tests) for RV32I, RV32M, RV32A and the three B sub-extensions. See [Extensions](#extensions) for what is done and what is not.
 - 32 general-purpose 32-bit registers (x0–x31), x0 is always 0
 - 6-stage pipeline (Fetch, Decode, Execute, Memory, Load Align, Write-back) with forwarding, load-use stall and branch flush
-- Branch prediction in Fetch: a 16-entry branch target buffer with 2-bit counters predicts branches and JAL, so a correctly predicted jump costs nothing. Branches are checked in Execute by a dedicated comparator, and a misprediction costs 2 cycles
+- Branch prediction in Fetch: a 64-entry branch target buffer with 2-bit counters predicts branches and JAL, so a correctly predicted jump costs nothing. Branches are checked in Execute by a dedicated comparator, and a misprediction costs 3 cycles
+- Split ALU: the common operations (add, sub, logic, shifts, compares) finish in one cycle; the less common B-extension operations take 2 cycles, which keeps the ALU's result mux short
 - Multiplier on the FPGA's DSP block (2 cycles) and a multi-cycle divider, both signed and unsigned; the pipeline stalls until they finish
-- Atomic instructions: LR/SC with a reservation register, and AMOs that read, compute and write back in two cycles in the Memory stage
+- Atomic instructions: LR/SC with a reservation register, and AMOs that read, compute and write back in three cycles in the Memory stage
 - Unified memory (von Neumann): one dual-port RAM of 64 KB holds both code and data. Port B fetches instructions, port A serves loads and stores. Reads are clocked, so the RAM maps onto the FPGA's block RAM
 - Byte, halfword and word loads and stores (LB, LH, LW, LBU, LHU, SB, SH, SW) through a load-store unit
 - The program is loaded into RAM with `$readmemh` from four hex files, one per byte lane (`src/program0.hex` … `program3.hex`), made from `src/program.hex`
-- **On the Tang Nano 20K:** Fmax of about **63 MHz** (Gowin timing report), about 4,900 logic cells (24% of the chip), and the RAM uses 32 of the 46 block RAMs (BSRAM)
+- **On the Tang Nano 20K:** Fmax of about **71.5 MHz** (Gowin timing report), about 4,900 logic cells (24% of the chip), and the RAM uses 32 of the 46 block RAMs (BSRAM)
 - The low 8 bits of x1 are exposed as an output, and the board wrapper shows them on the LEDs
 
 ## Getting started
@@ -171,9 +172,9 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 | Branches | BEQ, BNE, BLT, BGE, BLTU, BGEU | target = PC + imm |
 | Jumps | JAL, JALR | write PC + 4 to `rd`, JALR clears bit 0 of the target |
 | Upper immediate | LUI, AUIPC | AUIPC adds the immediate to its own PC |
-| Address generation (Zba) | SH1ADD, SH2ADD, SH3ADD | `rd = (rs1 << n) + rs2`, array indexing in one instruction |
-| Basic bit manipulation (Zbb) | ANDN, ORN, XNOR, MIN, MINU, MAX, MAXU, ROL, ROR, RORI, REV8, ORC.B, SEXT.B, SEXT.H, ZEXT.H, CLZ, CTZ, CPOP | single-cycle in the ALU; CLZ/CTZ/CPOP are combinational `for` loops |
-| Single-bit (Zbs) | BSET, BCLR, BINV, BEXT and the immediate forms BSETI, BCLRI, BINVI, BEXTI | bit number = low 5 bits of `rs2` or the immediate |
+| Address generation (Zba) | SH1ADD, SH2ADD, SH3ADD | `rd = (rs1 << n) + rs2`, array indexing in one instruction; 2 cycles (slow path) |
+| Basic bit manipulation (Zbb) | ANDN, ORN, XNOR, MIN, MINU, MAX, MAXU, ROL, ROR, RORI, REV8, ORC.B, SEXT.B, SEXT.H, ZEXT.H, CLZ, CTZ, CPOP | 2 cycles, in the ALU's slow path (see [ALU](#alu)); CLZ/CTZ/CPOP are combinational `for` loops |
+| Single-bit (Zbs) | BSET, BCLR, BINV, BEXT and the immediate forms BSETI, BCLRI, BINVI, BEXTI | bit number = low 5 bits of `rs2` or the immediate; 2 cycles (slow path) |
 | CSR (Zicsr) | CSRRW, CSRRS, CSRRC, CSRRWI, CSRRSI, CSRRCI | done in Execute, see [CSRs](#csrs-and-performance-counters) |
 | System | ECALL, EBREAK, MRET | machine-mode traps, see [Traps](#traps) |
 | Fences | FENCE, FENCE.I | executed as NOP (in-order core, one unified memory) |
@@ -233,6 +234,27 @@ The result is chosen by a 4-input mux (`wbsel`). For loads the value comes from 
 - `10`: the immediate (LUI)
 - `11`: PC + 4 (JAL, JALR)
 
+### ALU
+
+The ALU is split in two so that its final result mux stays short:
+
+- **Fast path (1 cycle):** ADD, SUB, XOR, AND, OR, SLL, SRL, SRA, SLT, SLTU. These are about 90% of the ALU operations in real programs (measured on Embench). Their result (`fastres`) comes from a 10-input mux.
+- **Slow path (2 cycles):** the other 25 B-extension operations (SH1ADD … CPOP). Their result (`slowres`) is registered (`slowprod <= slowres`) and used in the next cycle.
+
+The results of everything that takes more than one cycle (multiplier, divider, slow path) are already in registers, so they are collected by their own small mux (`polyres`), and the final choice is only between two values:
+
+```verilog
+assign isslow = (op >= ALUSH1ADD);
+always @(*) begin
+    if(ispoly)          // MUL/DIV or a slow B operation
+        result = polyres;
+    else
+        result = fastres;
+end
+```
+
+A slow operation reuses the multi-cycle mechanism of MUL/DIV (`ispoly`, `runi`, see [Multiplier and divider](#multiplier-and-divider)): in the first cycle the pipeline stalls and `slowres` is registered, in the second cycle `runi` is set and `done` is 1, so the instruction moves on. No extra ready flag is needed, because `runi` already waits exactly one cycle. On CoreMark this costs 1.8% more cycles; the shorter mux, together with the precomputed forwarding below, raised Fmax from 59 to 71.5 MHz.
+
 ### Branches and jumps
 
 Branches are resolved in Execute. A small comparator, separate from the ALU, checks the condition given by `funct3` on the forwarded operands:
@@ -255,55 +277,62 @@ assign target = extrap ? mtvecout : exmret ? mepcout :
                 actualtaken ? expc + exdata : expc + 4;
 ```
 
-When `flush` is 1, the PC jumps to `target`, `killid` turns the instruction in Decode into a NOP (`addi x0, x0, 0`) and the `ex` control signals are cleared, so the two wrong instructions behind the branch are thrown away. A misprediction costs two cycles; a correct prediction costs nothing. JALR (its target comes from a register) always flushes. JAL and JALR write their return address (`mempc4`) through the write-back mux.
+When a misprediction is found in Execute, `flushnow` is registered first (`redir`, `redirpc`) and acts one cycle later: the PC jumps to `redirpc`, `killid` turns the instruction in Decode into a NOP (`addi x0, x0, 0`) and the `ex` control signals are cleared, so the wrong instructions behind the branch are thrown away. Delaying the redirect by one cycle takes the branch comparator off the PC's path; meanwhile the wrong-path instruction in Execute is blocked from writing anything (registers, memory, CSRs, the predictor). A misprediction costs three cycles; a correct prediction costs nothing. JALR (its target comes from a register) always flushes. JAL and JALR write their return address (`mempc4`) through the write-back mux.
 
 ### Branch prediction
 
-`bpu.v` predicts, in Fetch and from the PC alone, whether the instruction being fetched is a taken branch or jump, and where it goes. It is a 16-entry table (branch target buffer):
+`bpu.v` predicts, in Fetch and from the PC alone, whether the instruction being fetched is a taken branch or jump, and where it goes. It is a 64-entry table (branch target buffer):
 
 | Field | Bits | Meaning |
 |-------|------|---------|
 | `valid` | 1 | the entry holds a branch |
-| `tag` | 10 (`pc[15:6]`) | which branch owns the entry (many addresses share one entry) |
+| `tag` | 8 (`pc[15:8]`) | which branch owns the entry (many addresses share one entry) |
 | `target` | 14 (`target[15:2]`) | where the branch jumps |
 | `ctr` | 2 | saturating counter: `00` strongly not taken … `11` strongly taken |
 
-The entry is chosen by `pc[5:2]` (instructions are 4-byte aligned, so `pc[1:0]` is always `00`). A prediction is made when the entry is valid, its tag matches and the counter's top bit is 1; the PC then goes to the stored target instead of PC + 4.
+The entry is chosen by `pc[7:2]` (instructions are 4-byte aligned, so `pc[1:0]` is always `00`). A prediction is made when the entry is valid, its tag matches and the counter's top bit is 1; the PC then goes to the stored target instead of PC + 4.
 
 ```verilog
-wire hit       = valid[idx] && (tagmem[idx] == pc[15:6]);
+wire hit       = valid[idx] && (tagmem[idx] == pc[15:8]);
 assign predtaken = hit && ctrmem[idx][1];
 ```
 
-The prediction travels down the pipeline with its instruction (`idpred` → `expred`, together with the counter value). In Execute the real outcome is compared with it, and the table entry is written: valid, tag, target and the counter moved one step toward taken or not taken (it saturates at `11` and `00`, so one odd outcome in a loop does not flip the prediction). Carrying the counter down the pipeline means the table needs only one read port, so Gowin maps it onto small distributed RAMs. Branches and JAL are predicted; JALR is not.
+The prediction travels down the pipeline with its instruction (`idpred` → `expred`, together with the counter value). In Execute the real outcome is compared with it, and the table entry is written: valid, tag, target and the counter moved one step toward taken or not taken (it saturates at `11` and `00`, so one odd outcome in a loop does not flip the prediction). Carrying the counter down the pipeline means the table needs only one read port. The table write happens one cycle after Execute (the update signals are registered first), which takes the predictor off the longest path at no cost in cycles. Branches and JAL are predicted; JALR is not.
 
-On CoreMark the predictor is right 86.5% of the time (9,305 mispredictions in 68,744 branches and jumps), which cut the cycle count by 9.3%. It costs about 64 LUTs, 48 registers and 6 SSRAM blocks.
+On CoreMark the 64-entry predictor is right 92.2% of the time (5,383 mispredictions). Simulated table sizes: 16 entries 489,716 cycles, 64 entries 482,734, 256 entries 482,268, 1024 entries 481,874, so 64 is where it stops paying off.
 
 ### Forwarding (data hazards)
 
-An instruction may need a register that an earlier instruction has not written yet. The value is forwarded from the stage that holds it:
+An instruction may need a register that an earlier instruction has not written yet. The value is forwarded from the stage that holds it. The decision *where* the value comes from is made one cycle early, while the instruction is still in Decode, and stored in six 1-bit registers, so Execute only has a mux and no comparisons at the start of its cycle:
 
 ```verilog
 // Decode: an older instruction is being written back right now
 assign fwdA   = (wbenable && (wbreg == opregA) && (wbreg != 0)) ? wbdata : reddataA;
-// Execute: the three older instructions are in Memory, Load Align and Write-back
-assign memfwd = memsc ? {31'd0, !scok} :            // SC result (0 = success)
-                (memwbsel == 2'b10) ? memdata :
+// next cycle: who will be in Execute, Memory and Load Align
+assign pipemove   = !stall;
+assign nextexregA = pipemove ? opregA: exopregA;        // instruction stalled in Execute stays
+assign nextmemwen = pipemove ? exwen: (amostall && memwen);
+assign nextmemreg = pipemove ? exout: memout;
+assign nextlawen  = memwen && !amostall && (memwbsel != 2'b01);
+// registered decisions
+fwdmemA <= nextmemwen && (nextmemreg == nextexregA) && (nextexregA != 0);
+fwdlaA  <= nextlawen  && (memout     == nextexregA) && (nextexregA != 0);
+fwdwbA  <= laenable   && (lareg      == nextexregA) && (nextexregA != 0);
+// Execute: just a mux
+assign memfwd = (memwbsel == 2'b10) ? memdata :
                 (memwbsel == 2'b11) ? mempc4  : memalu;
-assign exfwdA = (memwen && (memout == exopregA) && (memout != 0)) ? memfwd :
-                ((laenable && (lareg == exopregA) && (lareg != 0) && !laload) ? ladata :
-                ((wbenable && (wbreg == exopregA) && (wbreg != 0)) ? wbdata : exA));
+assign exfwdA = fwdmemA ? memfwd: (fwdlaA ? ladata: (fwdwbA ? wbdata: exA));
 ```
 
-(and the same for B). The newest value wins: Memory first, then Load Align, then Write-back. A load is never forwarded from Load Align: its value comes out of the RAM and the LSU in that stage, and sending it on to the ALU in the same cycle made the longest path of the whole CPU. It is forwarded one cycle later from Write-back, out of a register. `memfwd` picks the right value for LUI (immediate) and JAL/JALR (PC + 4). x0 is never forwarded, so writes to x0 are ignored as RISC-V requires. `exfwdA` and `exfwdB` feed the ALU and the branch comparator, `exfwdB` is also the value a store carries into Memory, and `exfwdA` is the base of the JALR target.
+(and the same for B). The newest value wins: Memory first, then Load Align, then Write-back. Each comparison looks one stage back, because one cycle later every instruction will have moved one stage on. When Execute is stalled (MUL, DIV, a slow ALU operation, an AMO), the instruction in Execute stays, Memory gets a bubble (or keeps the AMO), and the decisions are recomputed for that situation. This took 3 ns off the start of the three longest paths (ALU result, slow path, branch redirect). A load is never forwarded from Load Align: its value comes out of the RAM and the LSU in that stage, and sending it on to the ALU in the same cycle made the longest path of the whole CPU. It is forwarded one cycle later from Write-back, out of a register. An SC result is not forwarded from Memory either (the reservation check is a 32-bit compare); it is forwarded from Load Align, and the load-use stall treats SC like a load. `memfwd` picks the right value for LUI (immediate) and JAL/JALR (PC + 4). x0 is never forwarded, so writes to x0 are ignored as RISC-V requires. `exfwdA` and `exfwdB` feed the ALU and the branch comparator, `exfwdB` is also the value a store carries into Memory, and `exfwdA` is the base of the JALR target.
 
 ### Load-use stall
 
 A load's value is ready to forward only in Write-back. An instruction that needs it must wait in Decode while the load is in Execute or Memory:
 
 ```verilog
-assign loadstall = (exload && (exout != 0) && ((exout == opregA) || (exout == opregB))) ||
-                   ((memwbsel == 2'b01) && memwen && (memout != 0) && ((memout == opregA) || (memout == opregB)));
+assign loadstall = ((exload || exsc) && (exout != 0) && ((exout == opregA) || (exout == opregB))) ||
+                   (((memwbsel == 2'b01) || memsc) && memwen && (memout != 0) && ((memout == opregA) || (memout == opregB)));
 ```
 
 When `loadstall` is 1, the PC and Decode hold, and a bubble goes into Execute. The instruction right after a load waits 2 cycles, one with an instruction in between waits 1, and with two in between there is no wait.
@@ -322,7 +351,7 @@ The operands are registered first and multiplied in the next cycle, so the multi
 
 **Divider (`div32bit.v`).** Restoring long division, one quotient bit per cycle, about 32 cycles. The sign logic lives inside the module: it works on absolute values and negates the result when needed. Division by zero returns all ones for the quotient and the dividend for the remainder, and the signed overflow case (−2³¹ / −1) follows the RISC-V rules.
 
-When a MUL or DIV instruction reaches Execute (the same mechanism for both):
+When a MUL, DIV or slow ALU instruction reaches Execute (the same mechanism for all of them):
 
 1. A one-cycle `start` pulse is sent to the ALU and the `runi` flag is set.
 2. The `stall` signal holds the PC, Decode and the `ex` registers, and sends bubbles into Memory.
@@ -337,16 +366,17 @@ All atomic instructions use the opcode `0101111`. The operation is chosen by `fu
 ```verilog
 wire scok = memsc && resvalid && (resaddr == memalu);
 // RAM write enable: normal stores, successful SCs, and the write cycle of an AMO
-.wrtenable((memstore && (!memsc || scok)) || (memamo && amophase)),
+.wrtenable((memstore && (!memsc || scok)) || (memamo && amoctn == 2'd2)),
 ```
 
-**AMOs (Zaamo).** An AMO reads a word, combines it with `rs2` and writes the result back, all to one address, and returns the old value in `rd`. Because RAM reads are clocked, the AMO stays in the Memory stage for two cycles:
+**AMOs (Zaamo).** An AMO reads a word, combines it with `rs2` and writes the result back, all to one address, and returns the old value in `rd`. Because RAM reads are clocked, the AMO stays in the Memory stage for three cycles, counted by `amoctn`:
 
-1. **Read cycle** (`amophase = 0`): the RAM reads the word. `amostall` holds the PC, Decode and Execute, keeps the AMO in Memory and sends a bubble into Load Align.
-2. **Write cycle** (`amophase = 1`): the old word is now on the RAM output (`loaddata`). `amoresult` is computed from it and `rs2` (add, swap, xor, and, or, min, max, minu, maxu) and written back.
+1. **Read cycle** (`amoctn = 0`): the RAM reads the word. `amostall` holds the PC, Decode and Execute, keeps the AMO in Memory and sends a bubble into Load Align.
+2. **Hold cycle** (`amoctn = 1`): the old word is on the RAM output (`loaddata`) and is copied into the register `amoold`.
+3. **Write cycle** (`amoctn = 2`): `amoresult` is computed from `amoold` and `rs2` (add, swap, xor, and, or, min, max, minu, maxu) and written back. Computing from a register instead of straight from the RAM output keeps the RAM read → compute → RAM write path out of a single cycle.
 
 ```verilog
-wire amostall = memamo && !amophase;
+wire amostall = memamo && (amoctn != 2'd2);
 wire stall    = (runi ? !aludone : ispoly) || amostall;
 ```
 
@@ -390,9 +420,9 @@ CSRRS/CSRRC do not write when the rs1 field is 0, so `csrr rd, csr` (= `csrrs rd
 
 An instruction counts as retired when it leaves Execute (`exvalid && !stall`). `exvalid` marks real instructions, so bubbles and flushed instructions are not counted. For now writes to the counters are ignored. `mscratch`, `mtvec`, `mepc` and `mcause` are writable. Other addresses read as 0.
 
-**CoreMark:** **2.04 CoreMark/MHz** (clang `-O2`, `-march=rv32im_zba_zbb_zbs_zicsr`, simulated on the real source files, time measured with `mcycle`; CRCs match the reference). Moving the multiplier onto the DSP block took it from 1.19 to 1.85, and branch prediction to 2.04 — about the same as an ESP32 core per MHz.
+**CoreMark:** **1.98 CoreMark/MHz**, about **142 CoreMark at 71.5 MHz** (clang `-O2`, `-march=rv32im_zba_zbb_zbs_zicsr`, simulated on the real source files, time measured with `mcycle`; CRCs match the reference). Moving the multiplier onto the DSP block took it from 1.19 to 1.85, and branch prediction to 2.04. The delayed branch redirect and the 2-cycle slow ALU path then gave back a few percent per MHz in exchange for a much faster clock: per second, Venom is now about 23% faster than at 2.04 CoreMark/MHz and 56 MHz.
 
-**Earlier measurement:** a C program (clang `-O2`: insertion sort of 200 numbers, CRC32, 8×8 matrix multiply) runs 89,338 instructions in 155,256 cycles: **IPC ≈ 0.58**, about **36 MIPS at 63 MHz**. The main losses then were the 32-cycle multiplier, the 2-cycle taken-branch penalty and load-use stalls; the first two have since been fixed.
+**Earlier measurement:** a C program (clang `-O2`: insertion sort of 200 numbers, CRC32, 8×8 matrix multiply) runs 89,338 instructions in 155,256 cycles: **IPC ≈ 0.58**, about **36 MIPS at 63 MHz** (the Fmax at that time). The main losses then were the 32-cycle multiplier, the 2-cycle taken-branch penalty and load-use stalls; the first two have since been fixed.
 
 ### Traps
 
@@ -432,7 +462,7 @@ The rv32 `zext_h`, `sext_b` and `sext_h` tests reuse 64-bit test values. GNU as 
 
 ### Timing and size
 
-The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). Moving the RAM into clocked block RAM first dropped it to 53 MHz, because a load's data went from the RAM through the LSU and forwarding into the ALU in one cycle. The Load Align stage split that path and brought it back to 63 MHz. The longest path now is forwarding select → ALU → `memalu`. The 32-bit adder uses the FPGA's fast carry chain (`a + b + cin`). The design uses about 4,900 logic cells (24%), 32 of 46 block RAMs and one DSP block of the GW2AR-18.
+The Gowin timing report gives an Fmax of about 71.5 MHz on the Tang Nano 20K (the 8-bit Venom Extended reached 95 MHz). Moving the RAM into clocked block RAM first dropped it to 53 MHz, because a load's data went from the RAM through the LSU and forwarding into the ALU in one cycle. The Load Align stage split that path and brought it back to 63 MHz. Adding traps, the B and A extensions and branch prediction slowly pulled it down to 56 MHz; shortening the critical paths (SC result no longer forwarded from Memory, delayed predictor update, 3-cycle AMO, split ALU and forwarding decisions made one cycle early) brought it to 71.5 MHz. The longest paths are now spread evenly at about 14 ns: forwarding mux → ALU → `memalu`, the slow ALU path and the branch redirect. `src/venom.sdc` asks Gowin to list the 300 longest paths, so the next bottleneck is always visible. The 32-bit adder uses the FPGA's fast carry chain (`a + b + cin`). The design uses about 4,900 logic cells (24%), 32 of 46 block RAMs and one DSP block of the GW2AR-18.
 
 ## Source files
 
@@ -440,7 +470,7 @@ The Gowin timing report gives an Fmax of about 63 MHz on the Tang Nano 20K (the 
 |------|--------|-------------|
 | `src/top.v` | `top` | Tang Nano 20K wrapper: clock divider (~260 kHz), reset button, LEDs |
 | `src/venom.cst` | | Tang Nano 20K pin assignments |
-| `src/venom.sdc` | | Clock constraint (27 MHz) for the timing report |
+| `src/venom.sdc` | | Clock constraint (27 MHz) and a 300-path timing report request |
 | `src/datapath.v` | `datapath` | CPU core: connects all components, pipeline registers, forwarding, hazard detection, branch comparator and flush, LR/SC reservation and the AMO unit |
 | `src/pc.v` | `pcounter` | Program counter (reset, stall, jump, PC + 4) |
 | `src/bpu.v` | `bpu` | Branch predictor: 16-entry branch target buffer with 2-bit counters |
