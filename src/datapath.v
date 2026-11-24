@@ -27,13 +27,14 @@ module datapath(
     wire actualtaken;
     wire mispred;
     reg [31:0] amoresult;
-    reg amophase;
+    reg [1:0] amoctn;
+    reg [31:0] amoold;
     wire amostall;
     wire amo;
     reg examo;
     reg [4:0] exf5;
     reg memamo;
-    assign amostall = memamo && !amophase;
+    assign amostall = memamo && (amoctn != 2'd2);
     reg [4:0] memf5;
     wire lr;
     wire sc;
@@ -96,9 +97,8 @@ module datapath(
     reg [31:0] expc;
     reg [31:0] mempc4;
     reg [2:0] memf3;
-    assign memfwd = memsc ? {31'd0, !scok} :
-                    (memwbsel == 2'b10) ? memdata :
-                    (memwbsel == 2'b11) ? mempc4 : memalu;
+    assign memfwd = (memwbsel == 2'b10) ? memdata :
+                (memwbsel == 2'b11) ? mempc4 : memalu;
     pcounter pcmodule(
         .address(flush ? redirpc : predtarget),
         .pc(pc),
@@ -204,8 +204,8 @@ module datapath(
     assign exfwdB = (memwen && (memout == exopregB)&& (memout != 0)) ? memfwd :
                 ((laenable && (lareg == exopregB)&& (lareg != 0)&& !laload) ? ladata :
                 ((wbenable && (wbreg == exopregB) && (wbreg != 0)) ? wbdata : exB));
-    assign loadstall = (exload && (exout != 0) && ((exout == opregA) || (exout == opregB))) ||
-                       ((memwbsel == 2'b01) && memwen && (memout != 0) && ((memout == opregA) || (memout == opregB)));
+    assign loadstall = ((exload || exsc) && (exout != 0) && ((exout == opregA) || (exout == opregB))) ||
+                   (((memwbsel == 2'b01) || memsc) && memwen && (memout != 0) && ((memout == opregA) || (memout == opregB)));
     wire [31:0] aluresult;
     wire aludone;
     wire ispoly;
@@ -229,7 +229,7 @@ module datapath(
     lsu lsu(
         .clk(clk),
         .address(memalu),
-        .wrtenable((memstore && (!memsc || scok)) || (memamo && amophase)),
+        .wrtenable((memstore && (!memsc || scok)) || (memamo && amoctn == 2'd2)),
         .wrtdata(memamo ? amoresult : memA),
         .funct3(memf3),
         .loaddata(loaddata),
@@ -249,15 +249,15 @@ module datapath(
     );
     always @(*) begin
         case(memf5)
-            5'b00000: amoresult = loaddata + memA;
+            5'b00000: amoresult = amoold + memA;
             5'b00001: amoresult = memA;
-            5'b00100: amoresult = loaddata^memA;
-            5'b01100: amoresult = loaddata&memA;
-            5'b01000: amoresult = loaddata|memA;
-            5'b10000: amoresult = ($signed(loaddata) < $signed (memA)) ? loaddata: memA;
-            5'b10100: amoresult = ($signed(loaddata) < $signed(memA)) ? memA : loaddata;
-            5'b11000: amoresult = (loaddata < memA) ? loaddata : memA;
-            5'b11100: amoresult = (loaddata < memA) ? memA : loaddata;
+            5'b00100: amoresult = amoold^memA;
+            5'b01100: amoresult = amoold&memA;
+            5'b01000: amoresult = amoold|memA;
+            5'b10000: amoresult = ($signed(amoold) < $signed (memA)) ? amoold: memA;
+            5'b10100: amoresult = ($signed(amoold) < $signed(memA)) ? memA : amoold;
+            5'b11000: amoresult = (amoold < memA) ? amoold : memA;
+            5'b11100: amoresult = (amoold < memA) ? memA : amoold;
             default: amoresult = memA;
         endcase
     end
@@ -273,9 +273,12 @@ module datapath(
     end
     always @(posedge clk) begin
         if(reset) 
-            amophase <= 0;
-        else 
-            amophase <= amostall;
+            amoctn <= 0;
+        else if(amostall)
+            amoctn <= amoctn + 1;
+        else
+            amoctn <= 0;
+            amoold <= loaddata;
     end
     reg runi;
     always @(posedge clk) begin

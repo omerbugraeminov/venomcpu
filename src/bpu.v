@@ -22,21 +22,36 @@ module bpu(
     assign predtaken = hit && ctrmem[idx][1];
     assign predtarget = {16'd0, tgtmem[idx], 2'd0};
     assign predctr = hit ? ctrmem[idx]: 2'b01;
+    reg delupd;
+    reg delupdtaken;
+    reg [31:0] delupdpc;
+    reg [31:0] delupdtarget;
+    reg [1:0] delupdctr;
+    always @(posedge clk) begin
+        if(reset)
+            delupd <= 0;
+        else
+            delupd <= upd;
+            delupdpc <= updpc;
+            delupdtarget <= updtarget;
+            delupdtaken <= updtaken;
+            delupdctr <= updctr;
+    end
     reg [1:0] newctr;
     always @(*) begin
-        if(updtaken)
-            newctr = (updctr == 2'b11) ? 2'b11 : updctr + 1;
+        if(delupdtaken)
+            newctr = (delupdctr == 2'b11) ? 2'b11 : delupdctr + 1;
         else
-            newctr = (updctr == 2'b00) ? 2'b00 : updctr - 1;
+            newctr = (delupdctr == 2'b00) ? 2'b00 : delupdctr - 1;
     end
-    wire [5:0] uidx = updpc[7:2];
+    wire [5:0] uidx = delupdpc[7:2];
     always @(posedge clk) begin
         if(reset)
             valid <= 0;
-        else if(upd) begin
+        else if(delupd) begin
             valid[uidx] <= 1;
-            tagmem[uidx] <= updpc[15:8];
-            tgtmem[uidx] <= updtarget[15:2];
+            tagmem[uidx] <= delupdpc[15:8];
+            tgtmem[uidx] <= delupdtarget[15:2];
             ctrmem[uidx] <= newctr;
         end
     end
