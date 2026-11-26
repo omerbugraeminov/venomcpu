@@ -23,7 +23,7 @@
 </style>
 </defs>
 <rect width="1600" height="1120" fill="#000"/>
-<text x="800" y="92" text-anchor="middle" style="font-size:60px;font-weight:700;fill:url(#title);letter-spacing:-1px">Venom32-V</text>
+<text x="800" y="92" text-anchor="middle" style="font-size:60px;font-weight:700;fill:url(#title);letter-spacing:-1px">Venom32</text>
 <text x="800" y="132" text-anchor="middle" style="font-size:20px;fill:#a1a1a6">A 32-bit RISC-V core, designed by hand in Verilog.</text>
 <ellipse cx="560" cy="520" rx="420" ry="260" fill="url(#glowA)" filter="url(#blur60)"/>
 <ellipse cx="1080" cy="470" rx="360" ry="220" fill="url(#glowC)" filter="url(#blur60)"/>
@@ -262,7 +262,7 @@
 <text x="800.0" y="731.0" class="tag" text-anchor="middle">SHARED MEMORY</text>
 <text x="800.0" y="755.0" class="bn" text-anchor="middle">Unified RAM</text>
 <text x="800.0" y="775.0" class="bs" text-anchor="middle">64 KB · 4 byte lanes · dual-port · code + data · 32 block RAMs</text>
-<text x="1378" y="836" text-anchor="end" style="font-size:10px;fill:#fff;fill-opacity:0.18;letter-spacing:2px">VENOM32-V · RV32IMAB_ZICSR · 2026</text>
+<text x="1378" y="836" text-anchor="end" style="font-size:10px;fill:#fff;fill-opacity:0.18;letter-spacing:2px">VENOM32 · RV32IMAB_ZICSR · 2026</text>
 <text x="222" y="836" style="font-size:10px;fill:#fff;fill-opacity:0.18;letter-spacing:2px">TANG NANO 20K · GW2AR-18</text>
 <line x1="200" y1="892" x2="1400" y2="892" stroke="#fff" stroke-opacity="0.1"/>
 <text x="350" y="950" class="stat">6</text><text x="350" y="980" class="statl">pipeline stages</text>

@@ -1,13 +1,13 @@
-# Venom32-V
+# Venom32
 
-Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M (multiply/divide), A (atomics), B (bit manipulation) and Zicsr (control and status registers) extensions on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
+Venom32 is a 32-bit RISC-V processor written from scratch in Verilog. It implements the RV32I base instruction set with the M (multiply/divide), A (atomics), B (bit manipulation) and Zicsr (control and status registers) extensions on a 6-stage pipeline. It is a learning project: the goal is to understand how a CPU works by designing every part of it by hand. It is developed with Gowin EDA on a Sipeed Tang Nano 20K, but the CPU core itself is plain Verilog and can be used on any FPGA.
 
-![Venom32-V core](docs/core.svg)
+![Venom32 core](docs/core.svg)
 
 > **Branches:** Venom grew in three steps, and each one has its own branch.
 > - `main`: **Venom**, the original 8-bit single-cycle CPU with its own 16-instruction set.
 > - `extended`: **Venom Extended**, the same 8-bit CPU with a 5-stage pipeline.
-> - `venom32-v` (this branch): **Venom32-V**, the pipelined core ported to 32-bit RISC-V.
+> - `venom32` (this branch): **Venom32**, the pipelined core ported to 32-bit RISC-V.
 
 ## Overview
 
@@ -35,7 +35,7 @@ Venom32-V is a 32-bit RISC-V processor written from scratch in Verilog. It imple
 ```
 git clone <repository-url>
 cd venom
-git checkout venom32-v
+git checkout venom32
 ```
 
 ### Running on Tang Nano 20K
@@ -138,7 +138,7 @@ Because of the byte load, x1 wraps from 255 back to 0.
 
 ## Instruction formats
 
-Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd` are always in the same place, only the immediate moves around:
+Venom32 uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd` are always in the same place, only the immediate moves around:
 
 ```
  31        25 24    20 19    15 14  12 11          7 6      0
@@ -181,7 +181,7 @@ Venom32-V uses the six standard RISC-V instruction formats. `rs1`, `rs2` and `rd
 
 ## Extensions
 
-RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32-V is **RV32IMAB_Zicsr_Zifencei**.
+RISC-V is modular: a small base instruction set plus optional extensions, each with its own letter or name. A CPU's full name lists everything it supports, so Venom32 is **RV32IMAB_Zicsr_Zifencei**.
 
 | Extension | What it adds | Status |
 |-----------|--------------|:------:|
@@ -199,7 +199,7 @@ RISC-V is modular: a small base instruction set plus optional extensions, each w
 
 ## Architecture
 
-![Venom32-V architecture](docs/architecture.svg)
+![Venom32 architecture](docs/architecture.svg)
 
 ### Pipeline
 
@@ -445,7 +445,7 @@ There is only machine mode and no interrupts yet, so MRET simply jumps back. `ms
 
 ### Verification (riscv-tests)
 
-Venom32-V runs the official [riscv-tests](https://github.com/riscv-software-src/riscv-tests), with the standard `p` environment of [riscv-test-env](https://github.com/riscv/riscv-test-env): each test sets up `mtvec`, starts with MRET, and reports its result with ECALL to a trap handler that writes it to `tohost`. They are linked at address 0, loaded through `program0.hex` … `program3.hex` and simulated with Icarus Verilog on the real source files.
+Venom32 runs the official [riscv-tests](https://github.com/riscv-software-src/riscv-tests), with the standard `p` environment of [riscv-test-env](https://github.com/riscv/riscv-test-env): each test sets up `mtvec`, starts with MRET, and reports its result with ECALL to a trap handler that writes it to `tohost`. They are linked at address 0, loaded through `program0.hex` … `program3.hex` and simulated with Icarus Verilog on the real source files.
 
 | Suite | Result |
 |-------|--------|
@@ -456,7 +456,7 @@ Venom32-V runs the official [riscv-tests](https://github.com/riscv-software-src/
 | rv32uzbb (basic bit manipulation) | 18 / 18 ✅ |
 | rv32uzbs (single-bit) | 8 / 8 ✅ |
 
-The only failure is `ma_data`, which tests misaligned loads and stores (for example `lw` from address `0x1001`). RISC-V allows a core to leave these out, and Venom32-V does not support them yet.
+The only failure is `ma_data`, which tests misaligned loads and stores (for example `lw` from address `0x1001`). RISC-V allows a core to leave these out, and Venom32 does not support them yet.
 
 The rv32 `zext_h`, `sext_b` and `sext_h` tests reuse 64-bit test values. GNU as silently cuts them to 32 bits, Clang refuses them; a three-line change to `test_macros.h` (masking the inputs with `MASK_XLEN`, as the other macros already do) makes them build with Clang too.
 
@@ -490,7 +490,7 @@ The Gowin timing report gives an Fmax of about 71.5 MHz on the Tang Nano 20K (th
 | `src/program.hex` | | The program, one 32-bit word per line (readable source) |
 | `src/program0.hex` … `program3.hex` | | The same program split into byte lanes, loaded into RAM at startup |
 
-Left over from the 8-bit versions and not used by Venom32-V: `instructionmemory.v`, `mul8bit.v`, `div8bit.v`, `sub8bit.v`, `adder8bit.v`, `adder4bit.v`, `adder2bit.v`, `tb.v`. `fulladder.v` and `halfadder.v` are only used by those.
+Left over from the 8-bit versions and not used by Venom32: `instructionmemory.v`, `mul8bit.v`, `div8bit.v`, `sub8bit.v`, `adder8bit.v`, `adder4bit.v`, `adder2bit.v`, `tb.v`. `fulladder.v` and `halfadder.v` are only used by those.
 
 ## Simulation
 
