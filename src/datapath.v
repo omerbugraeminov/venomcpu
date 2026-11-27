@@ -2,7 +2,10 @@ module datapath(
     input clk,
     input reset,
     input start,
-    output [7:0] r1
+    output [7:0] r1,
+    input ubusy,
+    output usend,
+    output [7:0] udata
 );
     reg exbranch;
     reg exjal;
@@ -52,6 +55,7 @@ module datapath(
     reg [1:0] laoff;    
     reg [2:0] laf3;
     reg laload;
+    reg lauart;
     reg [31:0] wbdata;
     reg [4:0] wbreg;
     reg wbenable;
@@ -99,6 +103,8 @@ module datapath(
     reg [2:0] memf3;
     assign memfwd = (memwbsel == 2'b10) ? memdata :
                 (memwbsel == 2'b11) ? mempc4 : memalu;
+    assign usend = memstore && (memalu == 32'hFFF0);
+    assign udata = memA[7:0];
     pcounter pcmodule(
         .address(flush ? redirpc : predtarget),
         .pc(pc),
@@ -257,7 +263,7 @@ module datapath(
         .ispoly(ispoly)
     );
     wire [31:0] loaddata;
-    assign lafinal = laload ? loaddata:ladata;
+    assign lafinal = laload ? (lauart ? {31'd0, ubusy} : loaddata) : ladata;
     lsu lsu(
         .clk(clk),
         .address(memalu),
@@ -359,6 +365,7 @@ module datapath(
         laoff <= memalu[1:0];
         laf3 <= memf3;
         laload <= (memwbsel == 2'b01);
+        lauart <= (memalu == 32'hFFF0);
         if (reset)
         laenable <= 0;
         else 

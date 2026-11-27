@@ -19,6 +19,7 @@
         <File path="src/div32bit.v" type="file.verilog" enable="1"/>
         <File path="src/div8bit.v" type="file.verilog" enable="1"/>
         <File path="src/fulladder.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/gowin_rpll.v" type="file.verilog" enable="1"/>
         <File path="src/halfadder.v" type="file.verilog" enable="1"/>
         <File path="src/instructions.v" type="file.verilog" enable="1"/>
         <File path="src/lsu.v" type="file.verilog" enable="1"/>
@@ -30,6 +31,7 @@
         <File path="src/sub32bit.v" type="file.verilog" enable="1"/>
         <File path="src/sub8bit.v" type="file.verilog" enable="1"/>
         <File path="src/top.v" type="file.verilog" enable="1"/>
+        <File path="src/uart.v" type="file.verilog" enable="1"/>
         <File path="src/venom.cst" type="file.cst" enable="1"/>
         <File path="src/venom.sdc" type="file.sdc" enable="1"/>
     </FileList>
